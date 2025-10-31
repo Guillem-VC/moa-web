@@ -19,7 +19,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
 
-      // Només considerem l'usuari logejat si és "authenticated" i NO és recovery
       if (session?.user && session.user.aud === 'authenticated' && !session.user.recovery_sent_at) {
         setUser(session.user);
       } else {
@@ -41,29 +40,71 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    resetCart();        // <-- netegem el carrito local
+    resetCart();
     setMenuOpen(false);
     router.push('/');
   };
 
-  // Tanquem el menú si fem clic fora
+  useEffect(() => {
+    let logoutTimer: NodeJS.Timeout | null = null;
+
+    const resetTimer = () => {
+      if (logoutTimer) clearTimeout(logoutTimer);
+      logoutTimer = setTimeout(async () => {
+        console.log('Sessió expirada per inactivitat.');
+        await supabase.auth.signOut();
+        resetCart();
+        setUser(null);
+        router.push('/');
+      }, 3600000);
+    };
+
+    // Reinicia el comptador amb qualsevol acció
+    window.addEventListener('mousemove', resetTimer);
+    window.addEventListener('keydown', resetTimer);
+
+    resetTimer(); // inicia el primer cop
+
+    return () => {
+      if (logoutTimer) clearTimeout(logoutTimer);
+      window.removeEventListener('mousemove', resetTimer);
+      window.removeEventListener('keydown', resetTimer);
+    };
+  }, [user]);
+
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setMenuOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [menuRef]);
 
+  
+
   return (
-    <html lang="ca">
+    <html lang="es">
       <body className="bg-gradient-to-b from-white via-rose-50 to-white">
         <nav className="flex items-center justify-between px-8 py-4 bg-white shadow-sm sticky top-0 z-50">
-          <Link href="/" className="text-2xl font-bold text-rose-700">Mōa</Link>
+          {/* LOGO */}
+          <Link href="/" className="text-2xl font-bold text-rose-700">
+            Mōa
+          </Link>
+
+          {/* DRETA */}
           <div className="flex items-center gap-6 relative">
+            {/* 🔸 Enllaç Sobre nosaltres */}
+            <Link
+              href="/about"
+              className="text-gray-700 hover:text-rose-600 font-medium transition"
+            >
+              Sobre nosotros
+            </Link>
+
+            {/* 🛒 Carrito */}
             <Link href="/cart" className="relative">
               <ShoppingBag className="w-6 h-6 text-gray-700 hover:text-rose-600 transition" />
               {items.length > 0 && (
@@ -73,6 +114,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               )}
             </Link>
 
+            {/* 👤 Usuari */}
             {user ? (
               <div className="relative" ref={menuRef}>
                 <button

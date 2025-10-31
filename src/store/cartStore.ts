@@ -24,13 +24,14 @@ export interface CartState {
   removeFromCart: (id: string) => Promise<void>
   clearCart: () => Promise<void>
   resetCart: () => void
-  syncCartWithSupabase: () => Promise<void> // ✅ afegim aquesta funció
+  updateQuantity: (itemId: string, newQuantity: number) => Promise<void> // ✅ afegit
+  syncCartWithSupabase: () => Promise<void> // ✅ ja hi era
+  fetchStockForItems: () => Promise<Record<string, number>> // 👈 nou
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
 
-  // 🔹 Carrega el carrito de Supabase si hi ha usuari
   loadCart: async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
@@ -68,7 +69,25 @@ export const useCartStore = create<CartState>((set, get) => ({
     set({ items })
   },
 
-  // 🔹 Afegeix productes al carrito (tant si hi ha usuari com si no)
+  updateQuantity: async (itemId, newQuantity) => {
+    set((state) => ({
+      items: state.items.map((item) =>
+        item.id === itemId ? { ...item, quantity: newQuantity } : item
+      ),
+    }))
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await supabase
+        .from('cart_items') // ✅ correcció
+        .update({ quantity: newQuantity })
+        .eq('id', itemId)
+        .eq('user_id', user.id)
+    } else {
+      localStorage.setItem('cart_items', JSON.stringify(get().items))
+    }
+  },
+
   addToCart: async (item: AddCartItem) => {
     const { data: { user } } = await supabase.auth.getUser()
     const existing = get().items.find(
@@ -98,7 +117,6 @@ export const useCartStore = create<CartState>((set, get) => ({
       return
     }
 
-    // Si no existeix, creem un nou item
     const { data: prod } = await supabase
       .from('products')
       .select('name, price, image_url')
@@ -150,20 +168,15 @@ export const useCartStore = create<CartState>((set, get) => ({
 
   resetCart: () => set({ items: [] }),
 
-  // 🧩 Nova funció: sincronitza carrito local → Supabase després de login
   syncCartWithSupabase: async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const localItems = get().items
-    if (localItems.length === 0) {
-      await get().loadCart() // si no hi ha carrito local, simplement carrega el del backend
-      return
-    }
+    const guestCartRaw = localStorage.getItem('cart_items')
+    const guestItems: AddCartItem[] = guestCartRaw ? JSON.parse(guestCartRaw) : []
 
-    // ✅ Inserim o actualitzem cada producte del carrito local a Supabase
-    for (const item of localItems) {
-      const { data: existing, error: checkError } = await supabase
+    for (const item of guestItems) {
+      const { data: existing, error } = await supabase
         .from('cart_items')
         .select('id, quantity')
         .eq('user_id', user.id)
@@ -171,19 +184,17 @@ export const useCartStore = create<CartState>((set, get) => ({
         .eq('variant_size', item.variant_size)
         .maybeSingle()
 
-      if (checkError) {
-        console.error('Error comprovant carrito:', checkError)
+      if (error) {
+        console.error(error)
         continue
       }
 
       if (existing) {
-        // actualitza quantitat
         await supabase
           .from('cart_items')
           .update({ quantity: existing.quantity + item.quantity })
           .eq('id', existing.id)
       } else {
-        // insereix nou item
         await supabase.from('cart_items').insert({
           user_id: user.id,
           product_id: item.product_id,
@@ -193,7 +204,24 @@ export const useCartStore = create<CartState>((set, get) => ({
       }
     }
 
-    // 🧠 Un cop sincronitzat, recarreguem el carrito des de Supabase
+    localStorage.removeItem('cart_items')
     await get().loadCart()
+  },
+  fetchStockForItems: async () => {
+    const items = get().items
+    const stockMap: Record<string, number> = {}
+
+    for (const item of items) {
+      const { data: variant } = await supabase
+        .from('product_variants')
+        .select('stock')
+        .eq('product_id', item.product_id)
+        .eq('size', item.variant_size)
+        .single()
+
+      stockMap[item.product_id + '_' + item.variant_size] = variant?.stock ?? 0
+    }
+
+    return stockMap
   },
 }))

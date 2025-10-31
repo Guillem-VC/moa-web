@@ -14,24 +14,27 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const { loadCart, syncCartWithSupabase } = useCartStore()
+  const { syncCartWithSupabase } = useCartStore()
 
   const handleLogin = async () => {
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
-    if (error) setError(error.message)
-    else router.push('/') // redirigeix a home
+    if (error) {
+      setError(error.message)
+    } else {
+      // 🔹 Sync carrito local abans de redirigir
+      await syncCartWithSupabase()
+      router.push('/')
+    }
   }
 
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/` // després del login
-      }
     })
     if (error) setError(error.message)
+    else router.push('/') // redirigeix a home
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -40,10 +43,23 @@ export default function LoginPage() {
     }
   }
 
+  /*
   useEffect(() => {
+    // Comprovem sessió immediatament (important després del redirect OAuth)
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        console.log('Sessió detectada, sincronitzant carrito...')
+        syncCartWithSupabase()
+      }
+    }
+
+    checkSession()
+
+    // També escoltem qualsevol canvi d'autenticació
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        console.log('Usuari logejat, sincronitzant carrito...')
+        console.log('Usuari logejat via auth listener, sincronitzant carrito...')
         syncCartWithSupabase()
       }
     })
@@ -53,22 +69,7 @@ export default function LoginPage() {
     }
   }, [syncCartWithSupabase])
 
-  const handleForgotPassword = async () => {
-    if (!email) {
-      setError('Introdueix el teu correu per restablir la contrasenya')
-      return
-    }
-
-    setLoading(true)
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/login/update-password` // pàgina on canviar la contrasenya
-    })
-    setLoading(false)
-
-    if (error) setError(error.message)
-    else alert('Revisa el teu correu per restablir la contrasenya')
-  }
-
+*/
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0">
