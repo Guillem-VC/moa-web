@@ -1,128 +1,128 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useCartStore } from '@/store/cartStore'
+import { useCartStore, AddCartItem } from '@/store/cartStore'
+import { supabase } from '@/lib/supabaseClient'
+import { useRouter } from 'next/navigation'
 
 export default function CartPage() {
-  const { items, loadCart, removeFromCart, updateQuantity, fetchStockForItems } = useCartStore()
+  const { items, loadCart, removeFromCart, clearCart, addToCart } = useCartStore()
   const [loading, setLoading] = useState(true)
-  const [stockMap, setStockMap] = useState<Record<string, number>>({})
+  const router = useRouter()
 
   useEffect(() => {
-    const fetchData = async () => {
+    const initCart = async () => {
       setLoading(true)
+
+      const { data: { user } } = await supabase.auth.getUser()
+
+      // Si no hi ha usuari, només carreguem el carrito local
+      if (!user) {
+        const guestCart = localStorage.getItem('cart_items')
+        if (guestCart) {
+          const guestItems: AddCartItem[] = JSON.parse(guestCart)
+          // Posem els items al store local
+          guestItems.forEach((item) => addToCart(item))
+        }
+        setLoading(false)
+        return
+      }
+
+      // Si hi ha usuari, primer mirem si hi ha carrito local i fem merge
+      const guestCart = localStorage.getItem('cart_items')
+      if (guestCart) {
+        const guestItems: AddCartItem[] = JSON.parse(guestCart)
+        for (const item of guestItems) {
+          await addToCart(item) // sincronitza amb Supabase
+        }
+        localStorage.removeItem('cart_items')
+      }
+
+      // Carreguem el carrito ja sincronitzat del Supabase
       await loadCart()
-      const stock = await fetchStockForItems()
-      setStockMap(stock)
       setLoading(false)
     }
-    fetchData()
-  }, [loadCart, fetchStockForItems])
 
-  const handleIncrease = async (itemId: string) => {
-    const item = items.find((i) => i.id === itemId)
-    if (!item) return
-    const key = item.product_id + '_' + item.variant_size
-    const maxStock = stockMap[key] || 0
-    if (item.quantity < maxStock) {
-      await updateQuantity(item.id, item.quantity + 1)
-    } else {
-      alert('Has arribat al límit d’stock disponible per aquesta talla.')
+    initCart()
+  }, [addToCart, loadCart])
+
+  const handleCheckout = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      localStorage.setItem('cart_items', JSON.stringify(items))
+      router.push('/login')
+      return
     }
+
+    alert('Compra iniciada!')
   }
 
-  const handleDecrease = async (itemId: string) => {
-    const item = items.find((i) => i.id === itemId)
-    if (item && item.quantity > 1) {
-      await updateQuantity(item.id, item.quantity - 1)
-    }
-  }
+  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
   if (loading)
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white">
-        <img
-          src="/gos.gif"
-          alt="Carregant..."
-          className="w-24 h-auto"
-        />
-      </div>
+      <div className="text-center mt-24 text-gray-600">Carregant el carrito...</div>
     )
 
   return (
-    <div className="absolute inset-0">
-      {/* FONS */}
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Fons */}
       <div className="absolute inset-0">
         <img
           src="https://sopotey.com/blog/wp-content/uploads/2024/04/ropa-de-marca-original.jpg"
           className="w-full h-full object-cover opacity-50 blur-md"
           alt="Fons"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-rose-100 via-rose-200 to-white/70"></div>
+        <div className="absolute inset-0 bg-white/40"></div>
       </div>
 
       {/* Caixa central */}
-      <div className="relative z-10 max-w-3xl mx-auto p-8 bg-white/80 backdrop-blur-md rounded-2xl shadow-lg mt-24">
-        <h1 className="text-3xl font-bold mb-6 text-center text-gray-900">El teu carrito</h1>
+      <div className="relative z-10 w-full max-w-3xl p-8 bg-white/80 backdrop-blur-md shadow-lg rounded-2xl">
+        <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">El teu carrito</h1>
 
         {items.length === 0 && (
-          <p className="text-center text-gray-600 mt-6">Carrito buit 🛒</p>
+          <p className="text-center text-gray-600 mt-6">El teu carrito és buit 🛒</p>
         )}
 
         <ul className="space-y-4">
-          {items.map((item) => {
-            const key = item.product_id + '_' + item.variant_size
-            const maxStock = stockMap[key] || 0
-
-            return (
-              <li key={item.id} className="flex items-center justify-between bg-white/80 backdrop-blur-lg p-4 rounded-2xl shadow hover:shadow-xl transition transform hover:-translate-y-1">
-                <div className="flex items-center gap-4">
-                  <img src={item.image_url} className="w-20 h-20 object-cover rounded-lg" alt={item.name} />
-                  <div>
-                    <p className="font-semibold text-gray-900">{item.name}</p>
-                    <p className="text-sm text-gray-500">Talla: {item.variant_size}</p>
-                    <p className="text-rose-700 font-medium">
-                      {item.price} € x {item.quantity} = {(item.price * item.quantity).toFixed(2)} €
-                    </p>
-
-                    {/* Controls de quantitat */}
-                    <div className="flex items-center gap-2 mt-2">
-                      <button
-                        onClick={() => handleDecrease(item.id)}
-                        className="bg-rose-300 w-7 h-7 rounded-full disabled:opacity-100"
-                        disabled={item.quantity <= 1}
-                      >
-                        –
-                      </button>
-                      <span className="text-black font-medium">{item.quantity}</span>
-                      <button
-                        onClick={() => handleIncrease(item.id)}
-                        className="bg-rose-600 w-7 h-7 rounded-full disabled:opacity-0"
-                        disabled={item.quantity >= maxStock}
-                      >
-                        +
-                      </button>
-                      <span className="text-xs text-gray-500 ml-2">Stock: {maxStock}</span>
-                    </div>
-                  </div>
+          {items.map((item) => (
+            <li
+              key={item.id}
+              className="flex items-center justify-between bg-white p-4 rounded-xl shadow"
+            >
+              <div className="flex items-center gap-4">
+                <img
+                  src={item.image_url}
+                  alt={item.name}
+                  className="w-20 h-20 object-cover rounded-lg"
+                />
+                <div>
+                  <p className="font-semibold text-gray-900">{item.name}</p>
+                  <p className="text-gray-500 text-sm">Talla: {item.variant_size}</p>
+                  <p className="text-rose-700 font-medium">
+                    {item.price} € x {item.quantity} = {(item.price * item.quantity).toFixed(2)} €
+                  </p>
                 </div>
-                <button
-                  onClick={() => removeFromCart(item.id)}
-                  className="text-sm text-rose-600 hover:underline"
-                >
-                  Eliminar
-                </button>
-              </li>
-            )
-          })}
+              </div>
+              <button
+                onClick={() => removeFromCart(item.id)}
+                className="text-sm text-rose-600 hover:underline"
+              >
+                Eliminar
+              </button>
+            </li>
+          ))}
         </ul>
 
         {items.length > 0 && (
           <div className="mt-8 text-right">
             <p className="text-xl font-semibold text-gray-800">
-              Total: <span className="text-rose-700">{items.reduce((sum, i) => sum + i.price * i.quantity, 0).toFixed(2)} €</span>
+              Total: <span className="text-rose-700">{total.toFixed(2)} €</span>
             </p>
-            <button className="mt-4 w-full md:w-auto bg-rose-600 text-white px-6 py-3 rounded-full hover:bg-rose-700 transition">
+            <button
+              onClick={handleCheckout}
+              className="mt-4 w-full md:w-auto bg-rose-600 text-white px-6 py-3 rounded-full hover:bg-rose-700 transition"
+            >
               Finalitzar compra 💳
             </button>
           </div>

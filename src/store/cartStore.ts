@@ -171,10 +171,10 @@ export const useCartStore = create<CartState>((set, get) => ({
   syncCartWithSupabase: async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-
+  
     const guestCartRaw = localStorage.getItem('cart_items')
     const guestItems: AddCartItem[] = guestCartRaw ? JSON.parse(guestCartRaw) : []
-
+  
     for (const item of guestItems) {
       const { data: existing, error } = await supabase
         .from('cart_items')
@@ -183,12 +183,12 @@ export const useCartStore = create<CartState>((set, get) => ({
         .eq('product_id', item.product_id)
         .eq('variant_size', item.variant_size)
         .maybeSingle()
-
+  
       if (error) {
         console.error(error)
         continue
       }
-
+  
       if (existing) {
         await supabase
           .from('cart_items')
@@ -203,10 +203,14 @@ export const useCartStore = create<CartState>((set, get) => ({
         })
       }
     }
-
+  
+    // Un cop sincronitzat, eliminem el carrito local
     localStorage.removeItem('cart_items')
+  
+    // Carreguem el carrito complet de Supabase al state
     await get().loadCart()
   },
+  
   fetchStockForItems: async () => {
     const items = get().items
     const stockMap: Record<string, number> = {}
