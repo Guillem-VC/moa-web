@@ -79,3 +79,22 @@ npm run dev
 
 
 Accedeix a http://localhost:3000.
+
+
+
+Supabase CLI
+
+Descarrega supabase CLI 
+https://github.com/supabase/cli/releases/tag/v2.54.11
+
+Afegir al path. Preferiblement C:\SupabaseCli
+
+Reiniciar cmd
+
+Check 
+-> supabase --version
+-> supabase login
+-> supabase link --project-ref "nom projecte"
+-> supabase functions deploy send_stock_notifications --no-verify-jwt
+
+
