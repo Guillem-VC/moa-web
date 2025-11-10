@@ -10,27 +10,29 @@ export default function UserPage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Obtenir l'usuari actual
     const getUser = async () => {
-      const { data } = await supabase.auth.getUser()
-      setUser(data.user)
-    }
-    getUser()
-
-    // Llistener d'autenticació en temps real
-    const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT') {
-        router.push('/') // redirigeix a home
-      } else if (event === 'SIGNED_IN') {
-        setUser(session?.user ?? null)
+      let { data } = await supabase.auth.getSession();
+      if (!data?.session?.user) {
+        // Cas Vercel / OAuth redirect delay
+        setTimeout(async () => {
+          const { data: retry } = await supabase.auth.getSession();
+          setUser(retry?.session?.user ?? null);
+        }, 500);
+      } else {
+        setUser(data.session.user);
       }
-    })
-
-    // Cleanup
-    return () => {
-      data.subscription.unsubscribe()
     }
-  }, [router])
+
+    getUser();
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (!_event.includes('SIGNED_IN')) return;
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, [router]);
+
 
   if (!user)
     return (
