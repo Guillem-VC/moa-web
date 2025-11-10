@@ -6,35 +6,45 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 
 export default function UserPage() {
-  const [user, setUser] = useState<any>(undefined) // ⚠ undefined = loading
+  const [user, setUser] = useState<any>(undefined) // undefined = carregant
   const router = useRouter()
 
   useEffect(() => {
+    let mounted = true
+
     const initUser = async () => {
       const { data } = await supabase.auth.getSession()
+      if (!mounted) return
+
       if (data?.session?.user) {
         setUser(data.session.user)
       } else {
         // Cas redirect OAuth: espera uns ms i torna a comprovar
         setTimeout(async () => {
           const { data: retry } = await supabase.auth.getSession()
+          if (!mounted) return
           if (retry?.session?.user) setUser(retry.session.user)
-          else setUser(null) // No hi ha sessió
+          else setUser(null) // No hi ha usuari
         }, 500)
       }
     }
 
     initUser()
 
+    // Llistener per canvis en sessió
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      if (_event === 'SIGNED_OUT') router.push('/') // opcional: redirigir al logout
+      if (!mounted) return
+      if (_event === 'SIGNED_OUT') router.push('/login')
+      else setUser(session?.user ?? null)
     })
 
-    return () => listener.subscription.unsubscribe()
+    return () => {
+      mounted = false
+      listener.subscription.unsubscribe()
+    }
   }, [router])
 
-  // 🔹 Diferenciar loading de no loggat
+  // 🔹 Mostra loading mentre Supabase processa la sessió
   if (user === undefined) {
     return (
       <div className="flex items-center justify-center min-h-screen text-gray-600">
@@ -43,14 +53,14 @@ export default function UserPage() {
     )
   }
 
+  // 🔹 Redirigeix només si realment no hi ha usuari
   if (user === null) {
-    router.push('/login') // només si realment no hi ha usuari
+    router.push('/login')
     return null
   }
 
   return (
     <div className="min-h-screen flex bg-gray-50">
-      {/* Menú lateral */}
       <aside className="w-64 bg-white shadow-md p-6">
         <h2 className="text-xl font-bold text-rose-700 mb-6">El meu compte</h2>
         <nav className="flex flex-col gap-3">
@@ -61,7 +71,6 @@ export default function UserPage() {
         </nav>
       </aside>
 
-      {/* Contingut principal */}
       <main className="flex-1 p-10">
         <h1 className="text-2xl font-semibold mb-4">
           Benvingut, {user.email.split('@')[0]}
