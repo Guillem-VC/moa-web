@@ -120,7 +120,7 @@ export default function Home() {
             <button
               onClick={() => {
                 if (productsRef.current) {
-                  const yOffset = -50
+                  const yOffset = -120
                   const y = productsRef.current.getBoundingClientRect().top + window.pageYOffset + yOffset
                   window.scrollTo({ top: y, behavior: 'smooth' })
                 }
@@ -162,8 +162,8 @@ export default function Home() {
         </section>
 
         {/* PRODUCTES */}
-        <section ref={productsRef} className="max-w-7xl mx-auto px-6 py-16">
-          <h2 className="text-3xl font-semibold mb-10 text-center">New Stuff ✨</h2>
+        <section ref={productsRef} className="max-w-7xl mx-auto px-6 py-8">
+        {/*<h2 className="text-3xl font-semibold mb-10 text-center">New Stuff ✨</h2>*/}
 
           <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 transition-opacity duration-200">
             {filteredProducts.map((p) => (

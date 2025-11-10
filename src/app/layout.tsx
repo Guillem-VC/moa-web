@@ -151,8 +151,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </nav>
 
+        {/* 🔸 Franja groga amb missatge */}
+        <div className="bg-yellow-400 text-center text-sm font-medium text-gray-800 py-2 shadow-sm">
+          🚚 Envío gratis en pedidos superiores a 80 €
+        </div>
+
         {children}
       </body>
     </html>
   );
+
 }
