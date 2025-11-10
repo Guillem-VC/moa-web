@@ -15,20 +15,54 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const router = useRouter();
   const { resetCart } = useCartStore();
 
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+  // useEffect(() => {
+  //   const checkUser = async () => {
+  //     const { data: { session } } = await supabase.auth.getSession();
 
-      if (session?.user && session.user.aud === 'authenticated' && !session.user.recovery_sent_at) {
-        setUser(session.user);
-      } else {
+  //     if (session?.user && session.user.aud === 'authenticated' && !session.user.recovery_sent_at) {
+  //       setUser(session.user);
+  //     } else {
+  //       setUser(null);
+  //     }
+  //   };
+  //   checkUser();
+
+  //   const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+  //     if (session?.user && session.user.aud === 'authenticated' && !session.user.recovery_sent_at) {
+  //       setUser(session.user);
+  //     } else {
+  //       setUser(null);
+  //     }
+  //   });
+
+  //   return () => listener.subscription.unsubscribe();
+  // }, []);
+
+  useEffect(() => {
+    const initUser = async () => {
+      const { data, error } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error('Error obtenint sessió:', error.message);
         setUser(null);
+        return;
+      }
+
+      if (data?.session?.user) {
+        setUser(data.session.user);
+      } else {
+        // 🔸 Espera uns ms i torna a comprovar (cas Vercel post-login)
+        setTimeout(async () => {
+          const { data: retry } = await supabase.auth.getSession();
+          if (retry?.session?.user) setUser(retry.session.user);
+        }, 800);
       }
     };
-    checkUser();
+
+    initUser();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user && session.user.aud === 'authenticated' && !session.user.recovery_sent_at) {
+      if (session?.user) {
         setUser(session.user);
       } else {
         setUser(null);
@@ -37,6 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
     return () => listener.subscription.unsubscribe();
   }, []);
+
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

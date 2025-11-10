@@ -11,6 +11,6 @@ export const supabase = createClient(
             persistSession: true,
             autoRefreshToken: true,
             detectSessionInUrl: true,
-            storageKey: 'moa-auth-session',
+            storageKey: 'moa-auth',
         },
     });
