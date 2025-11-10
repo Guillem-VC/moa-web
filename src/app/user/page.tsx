@@ -23,15 +23,13 @@ export default function UserPage() {
         setTimeout(async () => {
           const { data: retry } = await supabase.auth.getSession()
           if (!mounted) return
-          if (retry?.session?.user) setUser(retry.session.user)
-          else setUser(null) // No hi ha usuari
+          setUser(retry?.session?.user ?? null)
         }, 500)
       }
     }
 
     initUser()
 
-    // Llistener per canvis en sessió
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return
       if (_event === 'SIGNED_OUT') router.push('/login')
@@ -54,10 +52,13 @@ export default function UserPage() {
   }
 
   // 🔹 Redirigeix només si realment no hi ha usuari
-  if (user === null) {
-    router.push('/login')
-    return null
-  }
+  useEffect(() => {
+    if (user === null) {
+      router.push('/login')
+    }
+  }, [user, router])
+
+  if (user === null) return null // encara estem fent redirect
 
   return (
     <div className="min-h-screen flex bg-gray-50">
