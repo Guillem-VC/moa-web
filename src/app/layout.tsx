@@ -15,25 +15,45 @@ export const useUser = () => useContext(UserContext);
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const { items, resetCart } = useCartStore();
-  const [user, setUser] = useState<any>(undefined);
+  const [user, setUser] = useState<any>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // 🔹 Obtenir l'usuari al carregar el layout
   useEffect(() => {
-    const getSession = async () => {
-      const { data } = await supabase.auth.getSession()
-      setUser(data.session?.user ?? null)
+    const initAuth = async () => {
+      // 1️⃣ Comprova si hi ha sessió
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+        return;
+      }
+
+      // 2️⃣ Si no hi ha sessió, mira si hi ha hash amb token (OAuth redirect)
+      if (window.location.hash.includes('access_token')) {
+        const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.hash);
+        if (error) {
+          console.error('Error recuperant sessió del redirect OAuth:', error);
+          setUser(null);
+          return;
+        }
+        setUser(data.session?.user ?? null);
+
+        // neteja hash per no tenir tokens a la URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
     }
-    getSession()
 
-    const { data: subscription } = supabase.auth.onAuthStateChange((_, session) => {
-      setUser(session?.user ?? null)
-    })
+    initAuth();
 
-    return () => subscription.subscription.unsubscribe()
-  }, [])
+    // Listener global d'autenticació
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) setUser(session.user);
+      else setUser(null);
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, []);
 
 
   // 🔹 Logout
@@ -56,7 +76,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         resetCart();
         setUser(null);
         router.push('/');
-      }, 3600000);
+      }, 1800000); //30 minuts
     };
 
     window.addEventListener('mousemove', resetTimer);
