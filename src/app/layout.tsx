@@ -15,33 +15,26 @@ export const useUser = () => useContext(UserContext);
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const { items, resetCart } = useCartStore();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<any>(undefined);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   // 🔹 Obtenir l'usuari al carregar el layout
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user && session.user.aud === 'authenticated' && !session.user.recovery_sent_at) {
-        setUser(session.user);
-      } else {
-        setUser(null);
-      }
-    };
-    checkUser();
+    const getSession = async () => {
+      const { data } = await supabase.auth.getSession()
+      setUser(data.session?.user ?? null)
+    }
+    getSession()
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user && session.user.aud === 'authenticated') {
-        setUser(session.user);
-      } else {
-        setUser(null);
-      }
-    });
+    const { data: subscription } = supabase.auth.onAuthStateChange((_, session) => {
+      setUser(session?.user ?? null)
+    })
 
-    return () => listener.subscription.unsubscribe();
-  }, []);
+    return () => subscription.subscription.unsubscribe()
+  }, [])
+
 
   // 🔹 Logout
   const handleLogout = async () => {
