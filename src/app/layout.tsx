@@ -1,67 +1,64 @@
 'use client';
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import './globals.css';
 import Link from 'next/link';
 import { ShoppingBag, User, ChevronDown } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useRef,
+} from 'react';
 
-// 🔹 Context per compartir l'usuari
+// 🟦 Context d’usuari
 export const UserContext = createContext<any>(null);
-
-// Hook personalitzat per usar l'usuari més fàcilment
 export const useUser = () => useContext(UserContext);
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const { items, resetCart } = useCartStore();
   const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);   // 🟩 Important per evitar redireccions falses!
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
+  // 🔹 Obtenir sessió inicial de Supabase
   useEffect(() => {
-    const initAuth = async () => {
-      // 1️⃣ Comprova si hi ha sessió
-      const { data: { session }, error } = await supabase.auth.getSession();
+    const loadSession = async () => {
+      const { data } = await supabase.auth.getSession();
+
+      if (data?.session?.user) {
+        setUser(data.session.user);
+      } else {
+        setUser(null);
+      }
+
+      setLoading(false); // 🟩 Marquem com carregat
+    };
+
+    loadSession();
+
+    // 🔹 Listener per canvis d'autenticació
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setUser(session.user);
-        return;
+      } else {
+        setUser(null);
       }
-
-      // 2️⃣ Si no hi ha sessió, mira si hi ha hash amb token (OAuth redirect)
-      if (window.location.hash.includes('access_token')) {
-        const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.hash);
-        if (error) {
-          console.error('Error recuperant sessió del redirect OAuth:', error);
-          setUser(null);
-          return;
-        }
-        setUser(data.session?.user ?? null);
-
-        // neteja hash per no tenir tokens a la URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-    }
-
-    initAuth();
-
-    // Listener global d'autenticació
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) setUser(session.user);
-      else setUser(null);
     });
 
     return () => listener.subscription.unsubscribe();
   }, []);
 
-
   // 🔹 Logout
   const handleLogout = async () => {
     await supabase.auth.signOut();
     resetCart();
-    setMenuOpen(false);
     setUser(null);
+    setMenuOpen(false);
     router.push('/');
   };
 
@@ -76,12 +73,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         resetCart();
         setUser(null);
         router.push('/');
-      }, 1800000); //30 minuts
+      }, 1800000); // 30 min
     };
 
     window.addEventListener('mousemove', resetTimer);
     window.addEventListener('keydown', resetTimer);
-
     resetTimer();
 
     return () => {
@@ -91,41 +87,66 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     };
   }, [user]);
 
-  // 🔹 Tanca el menú si fem click fora
+  // 🔹 Tancar menú quan es clica fora
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [menuRef]);
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  // 🟦 **Molt important: NO renderitzem res fins que la sessió estigui carregada**
+  if (loading) {
+    return (
+      <html lang="es">
+        <body className="p-10 text-center text-gray-700">
+          Carregant...
+        </body>
+      </html>
+    );
+  }
 
   return (
     <UserContext.Provider value={user}>
       <html lang="es">
         <body className="bg-gradient-to-b from-white via-rose-50 to-white">
           <nav className="flex items-center justify-between px-8 py-4 bg-white shadow-sm sticky top-0 z-50">
+
             {/* LOGO */}
-            <Link href="/" className="text-2xl font-bold text-rose-700">Mōa</Link>
+            <Link href="/" className="text-2xl font-bold text-rose-700">
+              Mōa
+            </Link>
 
             {/* DRETA */}
             <div className="flex items-center gap-6 relative">
-              <Link href="/about" className="text-gray-700 hover:text-rose-600 font-medium transition">Sobre nosotros</Link>
 
+              {/* Sobre Nosotros */}
+              <Link
+                href="/about"
+                className="text-gray-700 hover:text-rose-600 font-medium transition"
+              >
+                Sobre nosotros
+              </Link>
+
+              {/* Carrito */}
               <Link href="/cart" className="relative">
                 <ShoppingBag className="w-6 h-6 text-gray-700 hover:text-rose-600 transition" />
                 {items.length > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-rose-600 text-white text-xs px-2 py-0.5 rounded-full">{items.length}</span>
+                  <span className="absolute -top-2 -right-2 bg-rose-600 text-white text-xs px-2 py-0.5 rounded-full">
+                    {items.length}
+                  </span>
                 )}
               </Link>
 
+              {/* Usuari */}
               {user ? (
                 <div className="relative" ref={menuRef}>
                   <button
                     onClick={() => setMenuOpen(!menuOpen)}
-                    className="flex items-center gap-1 w-10 h-10 rounded-full bg-rose-600 text-white justify-center font-semibold cursor-pointer select-none"
+                    className="flex items-center gap-1 w-10 h-10 rounded-full bg-rose-600 text-white justify-center font-semibold cursor-pointer"
                   >
                     {user.email[0].toUpperCase()}
                     <ChevronDown className="w-4 h-4" />
@@ -157,6 +178,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </nav>
 
+          {/* Franja d'info */}
           <div className="bg-yellow-400 text-center text-sm font-medium text-gray-800 py-2 shadow-sm">
             🚚 Envío gratis en pedidos superiores a 80 €
           </div>
