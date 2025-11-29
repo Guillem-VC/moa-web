@@ -5,48 +5,49 @@ import { ShoppingBag, User, ChevronDown } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
-import { createContext, useContext, useEffect, useState, useRef } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useRef,
+} from 'react';
 
 // 🟦 Context d’usuari
-export const UserContext = createContext<any | undefined>(undefined);
+export const UserContext = createContext<any>(null);
 export const useUser = () => useContext(UserContext);
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const { items, resetCart } = useCartStore();
-  const router = useRouter();
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);   // 🟩 Important per evitar redireccions falses!
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
-  // 🔹 Inicialitzem l'usuari des del localStorage si existeix
-  const [user, setUser] = useState<any>(() => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const token = localStorage.getItem('supabase.auth.token');
-      if (token) {
-        const session = JSON.parse(token);
-        return session?.currentSession?.user ?? null;
-      }
-    } catch (e) {
-      console.error('Error llegint supabase token del localStorage', e);
-    }
-    return null;
-  });
-
-  const [loading, setLoading] = useState(true);
-
-  // 🔹 Sincronitzar amb Supabase
+  // 🔹 Obtenir sessió inicial de Supabase
   useEffect(() => {
     const loadSession = async () => {
       const { data } = await supabase.auth.getSession();
-      if (data?.session?.user) setUser(data.session.user);
-      else setUser(null);
-      setLoading(false);
+
+      if (data?.session?.user) {
+        setUser(data.session.user);
+      } else {
+        setUser(null);
+      }
+
+      setLoading(false); // 🟩 Marquem com carregat
     };
+
     loadSession();
 
+    // 🔹 Listener per canvis d'autenticació
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) setUser(session.user);
-      else setUser(null);
+      if (session?.user) {
+        setUser(session.user);
+      } else {
+        setUser(null);
+      }
     });
 
     return () => listener.subscription.unsubscribe();
@@ -61,9 +62,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     router.push('/');
   };
 
-  // 🔹 Timeout per inactivitat (30 min)
+  // 🔹 Timeout per inactivitat
   useEffect(() => {
-    if (!user) return;
     let logoutTimer: NodeJS.Timeout | null = null;
 
     const resetTimer = () => {
@@ -73,7 +73,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         resetCart();
         setUser(null);
         router.push('/');
-      }, 1800000);
+      }, 1800000); // 30 min
     };
 
     window.addEventListener('mousemove', resetTimer);
@@ -98,76 +98,94 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  // 🔹 No renderitzem res fins que la sessió estigui carregada
+  // 🟦 **Molt important: NO renderitzem res fins que la sessió estigui carregada**
   if (loading) {
     return (
       <html lang="es">
-        <body className="p-10 text-center text-gray-700">Carregant...</body>
+        <body className="p-10 text-center text-gray-700">
+          Carregant...
+        </body>
       </html>
     );
   }
 
   return (
-  <UserContext.Provider value={loading ? undefined : user}>
-    <html lang="es">
-      <body className="bg-gradient-to-b from-white via-rose-50 to-white">
-        <nav className="flex items-center justify-between px-8 py-4 bg-white shadow-sm sticky top-0 z-50">
-          <Link href="/" className="text-2xl font-bold text-rose-700">Mōa</Link>
+    <UserContext.Provider value={user}>
+      <html lang="es">
+        <body className="bg-gradient-to-b from-white via-rose-50 to-white">
+          <nav className="flex items-center justify-between px-8 py-4 bg-white shadow-sm sticky top-0 z-50">
 
-          <div className="flex items-center gap-6 relative">
-            <Link href="/about" className="text-gray-700 hover:text-rose-600 font-medium transition">Sobre nosotros</Link>
-
-            <Link href="/cart" className="relative">
-              <ShoppingBag className="w-6 h-6 text-gray-700 hover:text-rose-600 transition" />
-              {items.length > 0 && (
-                <span className="absolute -top-2 -right-2 bg-rose-600 text-white text-xs px-2 py-0.5 rounded-full">{items.length}</span>
-              )}
+            {/* LOGO */}
+            <Link href="/" className="text-2xl font-bold text-rose-700">
+              Mōa
             </Link>
 
-            {user ? (
-              <div className="relative" ref={menuRef}>
-                <button
-                  onClick={() => setMenuOpen(!menuOpen)}
-                  className="flex items-center gap-1 w-10 h-10 rounded-full bg-rose-600 text-white justify-center font-semibold cursor-pointer"
-                >
-                  {user.email[0].toUpperCase()}
-                  <ChevronDown className="w-4 h-4" />
-                </button>
+            {/* DRETA */}
+            <div className="flex items-center gap-6 relative">
 
-                {menuOpen && (
-                  <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded-lg shadow-lg text-sm z-50">
-                    <Link
-                      href="/user"
-                      className="block px-4 py-2 hover:bg-rose-50 text-gray-700"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      Àrea d’usuari
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 hover:bg-rose-50 text-gray-700"
-                    >
-                      Tancar sessió
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Link href="/login">
-                <User className="w-6 h-6 text-gray-700 hover:text-rose-600 transition cursor-pointer" />
+              {/* Sobre Nosotros */}
+              <Link
+                href="/about"
+                className="text-gray-700 hover:text-rose-600 font-medium transition"
+              >
+                Sobre nosotros
               </Link>
-            )}
+
+              {/* Carrito */}
+              <Link href="/cart" className="relative">
+                <ShoppingBag className="w-6 h-6 text-gray-700 hover:text-rose-600 transition" />
+                {items.length > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-rose-600 text-white text-xs px-2 py-0.5 rounded-full">
+                    {items.length}
+                  </span>
+                )}
+              </Link>
+
+              {/* Usuari */}
+              {user ? (
+                <div className="relative" ref={menuRef}>
+                  <button
+                    onClick={() => setMenuOpen(!menuOpen)}
+                    className="flex items-center gap-1 w-10 h-10 rounded-full bg-rose-600 text-white justify-center font-semibold cursor-pointer"
+                  >
+                    {user.email[0].toUpperCase()}
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+
+                  {menuOpen && (
+                    <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded-lg shadow-lg text-sm z-50">
+                      <Link
+                        href="/user"
+                        className="block px-4 py-2 hover:bg-rose-50 text-gray-700"
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        Àrea d’usuari
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 hover:bg-rose-50 text-gray-700"
+                      >
+                        Tancar sessió
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link href="/login">
+                  <User className="w-6 h-6 text-gray-700 hover:text-rose-600 transition cursor-pointer" />
+                </Link>
+              )}
+            </div>
+          </nav>
+
+          {/* Franja d'info */}
+          <div className="bg-yellow-400 text-center text-sm font-medium text-gray-800 py-2 shadow-sm">
+            🚚 Envío gratis en pedidos superiores a 80 €
           </div>
-        </nav>
 
-        <div className="bg-yellow-400 text-center text-sm font-medium text-gray-800 py-2 shadow-sm">
-          🚚 Envío gratis en pedidos superiores a 80 €
-        </div>
-
-        {children}
-      </body>
-    </html>
-  </UserContext.Provider>
-
+          {children}
+        </body>
+      </html>
+    </UserContext.Provider>
   );
 }
