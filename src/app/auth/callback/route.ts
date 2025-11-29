@@ -1,17 +1,7 @@
-import { useEffect } from 'react';
-import { useRouter } from 'next/router';
-import { supabase } from '@/lib/supabaseClient';
+import { NextResponse } from 'next/server'
 
-export default function AuthCallback() {
-  const router = useRouter();
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        router.replace('/user'); // ruta de l'àrea d'usuari
-      } else {
-        router.replace('/login');
-      }
-    });
-  }, [router]);
+export async function GET(request: Request) {
+  // Supabase ja processa el callback automàticament.
+  // Només redirigim a on toca.
+  return NextResponse.redirect(new URL('/user', request.url))
 }
