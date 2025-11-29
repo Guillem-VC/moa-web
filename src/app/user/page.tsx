@@ -11,14 +11,14 @@ export default function UserPage() {
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    // Només redirigeix si ja hem carregat el user
+    // Redirigeix només si hem carregat i no hi ha usuari
     if (user === null) {
-      setChecked(true); // ja sabem que no hi ha usuari
       router.push('/login');
     }
   }, [user, router]);
 
-  if (!user) return <div>Carregant...</div>;
+  if (user === undefined) return <div>Carregant...</div>;
+  if (user === null) return null; // redirecció en curs
 
   return (
     <div className="min-h-screen flex bg-gray-50">
