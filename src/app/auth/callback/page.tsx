@@ -4,14 +4,14 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 
-export default function AuthCallback() {
+export default function AuthCallbackPage() {
   const router = useRouter()
 
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
-        router.replace('/user') // aquí va la ruta de l'àrea d'usuari
+        router.replace('/user')  // ruta de l'àrea d'usuari
       } else {
         router.replace('/login')
       }
@@ -20,4 +20,5 @@ export default function AuthCallback() {
     checkSession()
   }, [router])
 
+  return <div>Carregant...</div>
 }
