@@ -32,9 +32,13 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
+      options: {
+        redirectTo: 'https://moa-web-v1.vercel.app/user' // ruta de l'àrea d'usuari
+      }
     })
-    if (error) setError(error.message)
-    else router.push('/user') // redirigeix a home
+
+    //if (error) setError(error.message)
+    //else router.push('/user') // redirigeix a home
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
