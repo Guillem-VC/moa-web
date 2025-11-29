@@ -34,7 +34,7 @@ export default function LoginPage() {
       provider: 'google',
     })
     if (error) setError(error.message)
-    else router.push('/') // redirigeix a home
+    else router.push('/user') // redirigeix a home
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
