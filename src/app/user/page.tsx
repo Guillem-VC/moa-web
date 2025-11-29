@@ -2,16 +2,23 @@
 
 import Link from 'next/link'
 import { useUser } from '@/app/layout' // 🔹 Importem el hook del layout
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function UserPage() {
-  const user = useUser() // 🔹 Agafem l'usuari directament del context
+ const user = useUser();
+  const router = useRouter();
+  const [checked, setChecked] = useState(false);
 
-  if (!user)
-    return (
-      <div className="flex items-center justify-center min-h-screen text-gray-600">
-        Carregant...
-      </div>
-    )
+  useEffect(() => {
+    // Només redirigeix si ja hem carregat el user
+    if (user === null) {
+      setChecked(true); // ja sabem que no hi ha usuari
+      router.push('/login');
+    }
+  }, [user, router]);
+
+  if (!user) return <div>Carregant...</div>;
 
   return (
     <div className="min-h-screen flex bg-gray-50">
