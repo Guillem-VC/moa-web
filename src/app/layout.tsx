@@ -15,7 +15,7 @@ export const useUser = () => useContext(UserContext);
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const { items, resetCart } = useCartStore();
-  const [user, setUser] = useState<any | undefined>(undefined);
+  const [user, setUser] = useState<any | null | undefined>(undefined);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
