@@ -15,7 +15,7 @@ export const useUser = () => useContext(UserContext);
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const { items, resetCart } = useCartStore();
-  const [user, setUser] = useState<any | null | undefined>(undefined);
+  const [user, setUser] = useState<any>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -24,14 +24,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-
-      if (session?.user) {
+      if (session?.user && session.user.aud === 'authenticated' && !session.user.recovery_sent_at) {
         setUser(session.user);
       } else {
         setUser(null);
       }
     };
-
     checkUser();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
