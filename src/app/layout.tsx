@@ -8,14 +8,14 @@ import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 
 // 🔹 Context per compartir l'usuari
-export const UserContext = createContext<any>(null);
+export const UserContext = createContext<any>(undefined); // ✅ inicialitzat amb undefined
 
 // Hook personalitzat per usar l'usuari més fàcilment
 export const useUser = () => useContext(UserContext);
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const { items, resetCart } = useCartStore();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<any>(undefined); // ✅ undefined = encara carregant
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -24,20 +24,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user && session.user.aud === 'authenticated' && !session.user.recovery_sent_at) {
-        setUser(session.user);
-      } else {
-        setUser(null);
-      }
+      setUser(session?.user ?? null); // null = no loguejat
     };
     checkUser();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user && session.user.aud === 'authenticated') {
-        setUser(session.user);
-      } else {
-        setUser(null);
-      }
+      setUser(session?.user ?? null);
     });
 
     return () => listener.subscription.unsubscribe();
