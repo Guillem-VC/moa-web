@@ -86,21 +86,37 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <html lang="es">
         <body className="bg-gradient-to-b from-white via-rose-50 to-white">
           <nav className="flex items-center justify-between px-8 py-4 bg-white shadow-sm sticky top-0 z-50">
+            
             {/* LOGO */}
             <Link href="/" className="text-2xl font-bold text-rose-700">Mōa</Link>
 
             {/* DRETA */}
             <div className="flex items-center gap-6 relative">
-              <Link href="/about" className="text-gray-700 hover:text-rose-600 font-medium transition">Sobre nosotros</Link>
+              <Link href="/about" className="text-gray-700 hover:text-rose-600 font-medium transition">
+                Sobre nosotros
+              </Link>
 
               <Link href="/cart" className="relative">
                 <ShoppingBag className="w-6 h-6 text-gray-700 hover:text-rose-600 transition" />
                 {items.length > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-rose-600 text-white text-xs px-2 py-0.5 rounded-full">{items.length}</span>
+                  <span className="absolute -top-2 -right-2 bg-rose-600 text-white text-xs px-2 py-0.5 rounded-full">
+                    {items.length}
+                  </span>
                 )}
               </Link>
 
-              {user ? (
+              {/* 🔥 CONTROL D'USUARI — EVITEM REDIRECCIONS MENTRE CARREGA */}
+              {user === undefined && (
+                <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
+              )}
+
+              {user === null && (
+                <Link href="/login">
+                  <User className="w-6 h-6 text-gray-700 hover:text-rose-600 transition cursor-pointer" />
+                </Link>
+              )}
+
+              {user && (
                 <div className="relative" ref={menuRef}>
                   <button
                     onClick={() => setMenuOpen(!menuOpen)}
@@ -119,6 +135,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       >
                         Àrea d’usuari
                       </Link>
+
                       <button
                         onClick={handleLogout}
                         className="block w-full text-left px-4 py-2 hover:bg-rose-50 text-gray-700"
@@ -128,10 +145,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     </div>
                   )}
                 </div>
-              ) : (
-                <Link href="/login">
-                  <User className="w-6 h-6 text-gray-700 hover:text-rose-600 transition cursor-pointer" />
-                </Link>
               )}
             </div>
           </nav>
@@ -145,4 +158,5 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </html>
     </UserContext.Provider>
   );
+
 }
