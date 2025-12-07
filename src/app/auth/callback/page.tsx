@@ -1,30 +1,20 @@
-'use client'
+// pages/api/auth/callback.ts
+import { createClient } from '@supabase/supabase-js'
+import { NextApiRequest, NextApiResponse } from 'next'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY! // clau privada
+)
 
-export default function AuthCallbackPage() {
-  const router = useRouter()
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { access_token, refresh_token } = req.query
 
-  useEffect(() => {
-    const handleAuth = async () => {
-      const { data, error } = await supabase.auth.getSession()
-      if (error) {
-        console.error('Error obtenint sessió:', error)
-        return
-      }
+  // Posa la cookie JWT
+  res.setHeader('Set-Cookie', [
+    `sb-access-token=${access_token}; Path=/; HttpOnly; SameSite=Lax; Secure`,
+    `sb-refresh-token=${refresh_token}; Path=/; HttpOnly; SameSite=Lax; Secure`,
+  ])
 
-      if (data.session?.user) {
-        // Ja estem loggats, anem a la pàgina principal
-        router.replace('/')
-      } else {
-        console.warn('No hi ha sessió activa')
-      }
-    }
-
-    handleAuth()
-  }, [router])
-
-  return <p>Processant login...</p>
+  res.redirect('/') // redirigeix a la pàgina principal
 }
