@@ -1,20 +1,23 @@
-// pages/api/auth/callback.ts
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { NextApiRequest, NextApiResponse } from 'next'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // clau privada
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { access_token, refresh_token } = req.query
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url)
+  const access_token = searchParams.get('access_token')
+  const refresh_token = searchParams.get('refresh_token')
 
-  // Posa la cookie JWT
-  res.setHeader('Set-Cookie', [
-    `sb-access-token=${access_token}; Path=/; HttpOnly; SameSite=Lax; Secure`,
-    `sb-refresh-token=${refresh_token}; Path=/; HttpOnly; SameSite=Lax; Secure`,
-  ])
+  if (!access_token || !refresh_token) {
+    return NextResponse.redirect(new URL('/login', req.url))
+  }
 
-  res.redirect('/') // redirigeix a la pàgina principal
+  const response = NextResponse.redirect(new URL('/', req.url))
+  response.cookies.set('sb-access-token', access_token, { path: '/', httpOnly: true, sameSite: 'lax', secure: true })
+  response.cookies.set('sb-refresh-token', refresh_token, { path: '/', httpOnly: true, sameSite: 'lax', secure: true })
+
+  return response
 }
