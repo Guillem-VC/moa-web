@@ -8,17 +8,23 @@ export default function AuthCallbackPage() {
   const router = useRouter()
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        router.replace('/user')  // ruta de l'àrea d'usuari
+    const handleAuth = async () => {
+      const { data, error } = await supabase.auth.getSession()
+      if (error) {
+        console.error('Error obtenint sessió:', error)
+        return
+      }
+
+      if (data.session?.user) {
+        // Ja estem loggats, anem a la pàgina principal
+        router.replace('/')
       } else {
-        router.replace('/login')
+        console.warn('No hi ha sessió activa')
       }
     }
 
-    checkSession()
+    handleAuth()
   }, [router])
 
-  return <div>Carregant...</div>
+  return <p>Processant login...</p>
 }
