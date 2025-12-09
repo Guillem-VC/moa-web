@@ -41,7 +41,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   return (
     <UserContext.Provider value={user}>
-      <html lang="en">
+      <html lang="es">
         <body className="bg-gradient-to-b from-white via-rose-50 to-white">
 
           {/* NAVBAR */}
