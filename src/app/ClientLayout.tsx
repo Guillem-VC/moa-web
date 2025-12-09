@@ -50,7 +50,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           </Link>
 
           {user === undefined && <div className="w-8 h-8 h-8 rounded-full bg-gray-200 animate-pulse" />}
-          {user === null && <Link href="/signup"><User className="w-6 h-6 text-gray-700 hover:text-rose-600 cursor-pointer" /></Link>}
+          {user === null && <Link href="/login"><User className="w-6 h-6 text-gray-700 hover:text-rose-600 cursor-pointer" /></Link>}
 
           {user && (
             <div className="relative">

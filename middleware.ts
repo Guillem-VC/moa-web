@@ -6,7 +6,7 @@ export function middleware(req: NextRequest) {
 
   // si entra a /user i NO té sessió → login
   if (req.nextUrl.pathname.startsWith('/user') && !access) {
-    return NextResponse.redirect(new URL('/login', req.url))
+    return NextResponse.redirect(new URL('/about', req.url))
   }
 
   return NextResponse.next()
