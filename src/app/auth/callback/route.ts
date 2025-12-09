@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(req: NextRequest) {
+  console.log('Callback called', req.url) // <--- comprova a Vercel logs
   const { searchParams } = new URL(req.url)
   const access_token = searchParams.get('access_token')
   const refresh_token = searchParams.get('refresh_token')
