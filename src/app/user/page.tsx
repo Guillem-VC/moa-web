@@ -9,7 +9,7 @@ export default async function UserPage() {
   const access_token = sbCookies.get('sb-access-token')?.value
 
   if (!access_token) {
-    redirect('/')
+    redirect('/login')
   }
 
   const supabaseAdmin = createClient(
