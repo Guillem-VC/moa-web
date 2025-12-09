@@ -2,10 +2,13 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(req: NextRequest) {
-  const access = req.cookies.get('sb-access-token')?.value
+  const token = req.cookies.get('sb-access-token')?.value
 
-  // si entra a /user i NO té sessió → login
-  if (req.nextUrl.pathname.startsWith('/user') && !access) {
+  console.log('PATH:', req.nextUrl.pathname)
+  console.log('COOKIE:', token)
+
+  // Si entra a /user sense sessió → redirigeix a /login
+  if (req.nextUrl.pathname.startsWith('/user') && !token) {
     return NextResponse.redirect(new URL('/about', req.url))
   }
 

@@ -5,27 +5,29 @@ export async function GET(req: NextRequest) {
   const access_token = searchParams.get('access_token')
   const refresh_token = searchParams.get('refresh_token')
 
-  // Si no hi ha tokens → torna al login
   if (!access_token || !refresh_token) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
-  // Redirigeix a l'usuari
   const res = NextResponse.redirect(new URL('/user', req.url))
 
-  // Escriu cookies perquè Supabase client-side les pugui llegir
-  res.cookies.set('sb-access-token', access_token, {
+  // Cookie server-side que pugui llegir el middleware
+  res.cookies.set({
+    name: 'sb-access-token',
+    value: access_token,
     httpOnly: true,
-    secure: true,
-    sameSite: 'lax',
     path: '/',
+    secure: true,       // obliga HTTPS en prod
+    sameSite: 'lax',    // l’ideal és 'lax'
   })
 
-  res.cookies.set('sb-refresh-token', refresh_token, {
+  res.cookies.set({
+    name: 'sb-refresh-token',
+    value: refresh_token,
     httpOnly: true,
+    path: '/',
     secure: true,
     sameSite: 'lax',
-    path: '/',
   })
 
   return res
