@@ -4,12 +4,10 @@ import ClientLayout from './ClientLayout';
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="es">
-      <body>
+
         <ClientLayout>
           {children}
         </ClientLayout>
-      </body>
-    </html>
+
   );
 }
