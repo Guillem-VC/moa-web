@@ -1,85 +1,79 @@
-'use client';
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
-import './globals.css';
-import Link from 'next/link';
-import { ShoppingBag, User, ChevronDown } from 'lucide-react';
-import { useCartStore } from '@/store/cartStore';
-import { supabase } from '@/lib/supabaseClient';
-import { useRouter } from 'next/navigation';
+'use client'
 
-// 🔹 Context per compartir l'usuari
-export const UserContext = createContext<any>(undefined); // ✅ inicialitzat amb undefined
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
+import './globals.css'
+import Link from 'next/link'
+import { ShoppingBag, User, ChevronDown } from 'lucide-react'
+import { useCartStore } from '@/store/cartStore'
+import { supabase } from '@/lib/supabaseClient'
+import { useRouter } from 'next/navigation'
 
-// Hook personalitzat per usar l'usuari més fàcilment
-export const useUser = () => useContext(UserContext);
+export const UserContext = createContext<any | null | undefined>(undefined)
+export const useUser = () => useContext(UserContext)
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const { items, resetCart } = useCartStore();
-  const [user, setUser] = useState<any>(undefined); // ✅ undefined = encara carregant
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
+  const { items, resetCart } = useCartStore()
+  const [user, setUser] = useState<any | null | undefined>(undefined)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
 
-  // 🔹 Obtenir l'usuari al carregar el layout
+  // obtenir usuari
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null); // null = no loguejat
-    };
-    checkUser();
+    const loadUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      setUser(session?.user ?? null)
+    }
+
+    loadUser()
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
+      setUser(session?.user ?? null)
+    })
 
-    return () => listener.subscription.unsubscribe();
-  }, []);
+    return () => listener.subscription.unsubscribe()
+  }, [])
 
-  // 🔹 Logout
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    resetCart();
-    setMenuOpen(false);
-    setUser(null);
-    router.push('/');
-  };
+    await supabase.auth.signOut()
+    resetCart()
+    setUser(null)
+    router.push('/')
+  }
 
-  // 🔹 Timeout per inactivitat
   useEffect(() => {
-    let logoutTimer: NodeJS.Timeout | null = null;
+    let logoutTimer: NodeJS.Timeout | null = null
 
     const resetTimer = () => {
-      if (logoutTimer) clearTimeout(logoutTimer);
+      if (logoutTimer) clearTimeout(logoutTimer)
       logoutTimer = setTimeout(async () => {
-        await supabase.auth.signOut();
-        resetCart();
-        setUser(null);
-        router.push('/');
-      }, 1800000); //30 minuts
-    };
+        await supabase.auth.signOut()
+        resetCart()
+        setUser(null)
+        router.push('/')
+      }, 1800000)
+    }
 
-    window.addEventListener('mousemove', resetTimer);
-    window.addEventListener('keydown', resetTimer);
-
-    resetTimer();
+    window.addEventListener('mousemove', resetTimer)
+    window.addEventListener('keydown', resetTimer)
+    resetTimer()
 
     return () => {
-      if (logoutTimer) clearTimeout(logoutTimer);
-      window.removeEventListener('mousemove', resetTimer);
-      window.removeEventListener('keydown', resetTimer);
-    };
-  }, [user]);
+      if (logoutTimer) clearTimeout(logoutTimer)
+      window.removeEventListener('mousemove', resetTimer)
+      window.removeEventListener('keydown', resetTimer)
+    }
+  }, [user])
 
-  // 🔹 Tanca el menú si fem click fora
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setMenuOpen(false);
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
       }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [menuRef]);
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   return (
     <UserContext.Provider value={user}>
