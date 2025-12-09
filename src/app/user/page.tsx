@@ -1,29 +1,33 @@
 'use client'
 
-import { useUser } from '@/app/layout'
-import { useEffect, useRef } from 'react'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabaseClient'
+import type { User } from '@supabase/supabase-js'
 import Link from 'next/link'
 
 export default function UserPage() {
-  const user = useUser()
-  const hasReloaded = useRef(false)
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  // 🔹 Quan la sessió passa de carregant → disponible, recarrega la pàgina un cop
   useEffect(() => {
-    if (user && !hasReloaded.current) {
-      hasReloaded.current = true
-      window.location.reload()
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      setUser(session?.user ?? null)
+      setLoading(false)
     }
-  }, [user])
 
-  if (user === undefined)
+    load()
+  }, [])
+
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen text-gray-600">
         Carregant sessió...
       </div>
     )
+  }
 
-  if (user === null)
+  if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen text-gray-600">
         No has iniciat sessió.
@@ -33,8 +37,8 @@ export default function UserPage() {
         </Link>
       </div>
     )
+  }
 
-  // 🔹 Ara user és vàlid → pàgina d'usuari
   return (
     <div className="min-h-screen flex bg-gray-50">
       <aside className="w-64 bg-white shadow-md p-6">
@@ -49,7 +53,7 @@ export default function UserPage() {
 
       <main className="flex-1 p-10">
         <h1 className="text-2xl font-semibold mb-4">
-          Benvingut, {user.email.split('@')[0]}
+          Benvingut
         </h1>
         <p className="text-gray-700">
           Des d’aquí pots gestionar el teu perfil, veure comandes i més opcions.
