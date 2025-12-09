@@ -1,3 +1,4 @@
+'use client'
 // app/user/page.tsx
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
@@ -8,7 +9,7 @@ export default async function UserPage() {
   const access_token = sbCookies.get('sb-access-token')?.value
 
   if (!access_token) {
-    redirect('/login')
+    redirect('/cart')
   }
 
   // Si vols, pots obtenir l'usuari server-side amb Supabase
