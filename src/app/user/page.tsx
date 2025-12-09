@@ -1,26 +1,27 @@
+// app/user/page.tsx
+import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
-import { createClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 
 export default async function UserPage() {
   const sbCookies = await cookies()
   const access_token = sbCookies.get('sb-access-token')?.value
 
-  // Si no hi ha token → redirigeix a login
-  if (!access_token) redirect('/login')
+  if (!access_token) {
+    redirect('/')
+  }
 
-  const supabase = createClient(
+  const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      global: { headers: { Authorization: `Bearer ${access_token}` } },
-    }
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const { data: { user }, error } = await supabase.auth.getUser()
+  const { data: { user } } = await supabaseAdmin.auth.getUser(access_token)
 
-  if (!user || error) redirect('/login')
+  if (!user) {
+    redirect('/login')
+  }
 
   return (
     <div className="min-h-screen flex bg-gray-50">
@@ -33,8 +34,11 @@ export default async function UserPage() {
           <Link href="/user/payment" className="text-gray-700 hover:text-rose-600">Pagaments</Link>
         </nav>
       </aside>
+
       <main className="flex-1 p-10">
-        <h1 className="text-2xl font-semibold mb-4">Benvingut</h1>
+        <h1 className="text-2xl font-semibold mb-4">
+          Benvingut
+        </h1>
         <p className="text-gray-700">
           Des d’aquí pots gestionar el teu perfil, veure comandes i més opcions.
         </p>
