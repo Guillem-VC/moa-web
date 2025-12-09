@@ -41,8 +41,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   return (
     <UserContext.Provider value={user}>
-      <html lang="es">
-        <body className="bg-gradient-to-b from-white via-rose-50 to-white">
+
 
           {/* NAVBAR */}
           <nav className="flex items-center justify-between px-8 py-4 bg-white shadow-sm sticky top-0 z-50">
@@ -117,8 +116,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           {/* CONTINGUT */}
           {children}
 
-        </body>
-      </html>
     </UserContext.Provider>
   );
 
