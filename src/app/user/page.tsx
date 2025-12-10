@@ -19,7 +19,7 @@ export default function UserPage() {
 
   return (
     <div>
-      <h1>Benvingut {user.email}</h1>
+      <h1>Hola{user.email}</h1>
     </div>
   )
 }
