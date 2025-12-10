@@ -7,9 +7,8 @@ export function middleware(req: NextRequest) {
   console.log('PATH:', req.nextUrl.pathname)
   console.log('COOKIE:', token)
 
-  // Si entra a /user sense sessió → redirigeix a /login
   if (req.nextUrl.pathname.startsWith('/user') && !token) {
-    return NextResponse.redirect(new URL('/about', req.url))
+    return NextResponse.redirect(new URL('/login', req.url))
   }
 
   return NextResponse.next()
