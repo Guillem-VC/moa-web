@@ -17,13 +17,13 @@ export async function POST(req: Request) {
     httpOnly: true,
     path: '/',
     secure: true,
-    sameSite: 'lax',
+    sameSite: 'none',
   })
   res.cookies.set('sb-refresh-token', refresh_token, {
     httpOnly: true,
     path: '/',
     secure: true,
-    sameSite: 'lax',
+    sameSite: 'none',
   })
 
   return res
