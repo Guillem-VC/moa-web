@@ -1,11 +1,11 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
+import { useRouter } from 'next/navigation';
 import { ShoppingBag, User, ChevronDown } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
-import Link from 'next/link';
 
 export const UserContext = createContext<any>(undefined);
 export const useUser = () => useContext(UserContext);
@@ -16,27 +16,20 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
 
+  // Inicialitza user client-side
   useEffect(() => {
     const initUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        router.replace('/login'); // redirigeix si no està loggat
-      } else {
-        setUser(session.user);
-      }
+      setUser(session?.user ?? null);
     };
     initUser();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session?.user) {
-        router.replace('/login');
-      } else {
-        setUser(session.user);
-      }
+      setUser(session?.user ?? null);
     });
 
     return () => listener.subscription.unsubscribe();
-  }, [router]);
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -44,8 +37,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     setUser(null);
     router.push('/');
   };
-
-  if (user === undefined) return <div>Carregant sessió...</div>;
 
   return (
     <UserContext.Provider value={user}>
@@ -58,6 +49,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             {items.length > 0 && <span className="absolute -top-2 -right-2 bg-rose-600 text-white text-xs px-2 py-0.5 rounded-full">{items.length}</span>}
           </Link>
 
+          {user === undefined && <div className="w-8 h-8 h-8 rounded-full bg-gray-200 animate-pulse" />}
           {user === null && <Link href="/login"><User className="w-6 h-6 text-gray-700 hover:text-rose-600 cursor-pointer" /></Link>}
 
           {user && (
