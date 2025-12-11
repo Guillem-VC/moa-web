@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'  
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState('')
@@ -11,17 +12,18 @@ export default function SignupPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const router = useRouter() 
 
   const handleSignup = async () => {
     setError('')
 
     // Validacions bàsiques
     if (!fullName || !email || !password) {
-      setError('Omple tots els camps')
+      setError('Se deben rellenar todos los campos')
       return
     }
     if (email !== confirmEmail) {
-      setError('Els correus no coincideixen')
+      setError('Los correos no coinciden')
       return
     }
 
@@ -38,7 +40,10 @@ export default function SignupPage() {
     setLoading(false)
 
     if (error) setError(error.message)
-    else alert('Compte creat correctament! Revisa el teu email.')
+    else {
+      alert('Compte creat correctament! Revisa el teu email.')
+      router.push('/')
+    }  
   }
 
   return (
