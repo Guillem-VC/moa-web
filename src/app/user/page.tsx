@@ -1,26 +1,31 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useUser } from '@/components/UserContext';
 
 export default function UserPage() {
   const user = useUser();
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user !== undefined) setLoading(false);
-    if (user === null) router.push('/cart');
-  }, [user, router]);
+  // Estat de càrrega global (AuthProvider)
+  if (user === undefined) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted-foreground">Carregant sessió...</p>
+      </div>
+    );
+  }
 
-  if (loading) return <div style={{ backgroundColor: 'yellow', minHeight: '100vh' }}>Carregant sessió...</div>;
+  // En producció això MAI hauria de passar gràcies al middleware
   if (!user) return null;
 
   return (
-    <div style={{ backgroundColor: 'lightblue', minHeight: '100vh', padding: '2rem' }}>
-      <h1 style={{ color: '#333', fontSize: '2rem' }}>Hola {user.email ?? 'Usuari'}</h1>
-      <p>Això és la teva àrea d'usuari.</p>
+    <div className="min-h-screen bg-background p-8">
+      <h1 className="text-3xl font-display mb-4">
+        Hola {user.email ?? 'Usuari'}
+      </h1>
+
+      <p className="text-muted-foreground">
+        Aquesta és la teva àrea privada.
+      </p>
     </div>
   );
 }

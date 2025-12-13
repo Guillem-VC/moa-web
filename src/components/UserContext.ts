@@ -3,14 +3,14 @@
 import { createContext, useContext } from 'react';
 
 // Tipus d'usuari segons Supabase
-export type User = {
+export type AuthUser = {
   id: string;
-  email?: string; // pot ser undefined
+  email?: string;
   [key: string]: any;
-} | null | undefined;
+};
 
-// Context
-export const UserContext = createContext<User>(undefined);
+export type UserState = AuthUser | null | undefined;
 
-// Hook per accedir a l'usuari
+export const UserContext = createContext<UserState>(undefined);
+
 export const useUser = () => useContext(UserContext);
