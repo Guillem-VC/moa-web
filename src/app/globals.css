@@ -37,6 +37,44 @@ body {
   }
 }
 
+/* Animació zoom */
+/* Zoom animat suau */
+@keyframes heroZoomIn {
+  from { transform: scale(1); }
+  to   { transform: scale(1.12); }
+}
+
+.animate-hero-zoom {
+  animation: heroZoomIn 8s ease-out forwards;
+  will-change: transform;
+}
+
+
+/* Transició d'opacitat */
+.fade-image {
+  opacity: 0;
+  transition: opacity 1.5s ease-in-out;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.fade-image.show {
+  opacity: 1;
+}
+
+
+.beige-image {
+  filter: 
+    saturate(0.85)
+    contrast(0.95)
+    brightness(1.05)
+    sepia(0.12);
+}
+
 .animate-gradient {
   background-size: 200% 200%;
   animation: gradientMove 10s ease infinite;

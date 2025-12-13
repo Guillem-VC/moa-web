@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useMemo } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import Link from 'next/link'
 import { useCartStore } from '@/store/cartStore'
+import Hero from '@/components/Hero'
 
 export default function Home() {
   const [allProducts, setAllProducts] = useState<any[]>([])
@@ -105,33 +106,7 @@ export default function Home() {
 
       <div className="relative z-10">
         {/* HERO */}
-        <section className="relative text-center py-28 overflow-hidden">
-          <div className="absolute inset-0">
-            <img
-              src="https://sopotey.com/blog/wp-content/uploads/2024/04/ropa-de-marca-original.jpg"
-              className="w-full h-full object-cover opacity-60 transform scale-105 animate-slow-pulse"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/40 to-white/80"></div>
-          </div>
-
-          <div className="relative z-10 max-w-3xl mx-auto">
-            <h1 className="text-6xl font-extrabold text-gray-900 drop-shadow-md">Mōa</h1>
-            <p className="mt-6 text-xl text-gray-700">Hold strong. Move free.</p>
-            <button
-              onClick={() => {
-                if (productsRef.current) {
-                  const yOffset = -120
-                  const y = productsRef.current.getBoundingClientRect().top + window.pageYOffset + yOffset
-                  window.scrollTo({ top: y, behavior: 'smooth' })
-                }
-              }}
-              className="mt-8 bg-rose-600 text-white px-8 py-3 rounded-full text-lg hover:bg-rose-700 shadow-lg transition transform hover:scale-105"
-            >
-              Nuestra colección
-            </button>
-          </div>
-        </section>
-
+        <Hero />
         {/* FILTRES */}
         <section className="text-center mt-6">
           <div className="flex flex-wrap justify-center gap-3">
