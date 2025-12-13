@@ -11,7 +11,7 @@ export default function UserPage() {
 
   useEffect(() => {
     if (user !== undefined) setLoading(false);
-    if (user === null) router.push('/cart');
+    if (user === null) router.push('/');
   }, [user, router]);
 
   if (loading) return <div style={{ backgroundColor: 'yellow', minHeight: '100vh' }}>Carregant sessió...</div>;
