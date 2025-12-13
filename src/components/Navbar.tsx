@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingBag, User, ChevronDown, Menu, Search, X } from 'lucide-react';
+import { ShoppingBag, User, ChevronDown, Search, X } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
@@ -13,16 +13,14 @@ export default function Navbar() {
   const { items, resetCart } = useCartStore();
   const router = useRouter();
 
-  const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [showNavbar, setShowNavbar] = useState(true);
 
   const lastScrollY = useRef(0);
-  const menuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  // Scroll behavior
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > lastScrollY.current && window.scrollY > 100) {
@@ -32,23 +30,20 @@ export default function Navbar() {
         setShowNavbar(true);
       }
       lastScrollY.current = window.scrollY;
-      if (menuOpen) setMenuOpen(false);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [menuOpen]);
+  }, []);
 
-  // Click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setMenuOpen(false);
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) setSearchOpen(false);
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {}
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Focus input
   useEffect(() => {
     if (searchOpen) searchInputRef.current?.focus();
   }, [searchOpen]);
@@ -62,11 +57,7 @@ export default function Navbar() {
   return (
     <>
       {/* Navbar */}
-      <div
-        className={`fixed top-0 left-0 w-full z-50 transition-transform duration-300 ${
-          showNavbar ? 'translate-y-0' : '-translate-y-full'
-        }`}
-      >
+      <div className={`fixed top-0 left-0 w-full z-50 transition-transform duration-300 ${showNavbar ? 'translate-y-0' : '-translate-y-full'}`}>
         {/* Banner */}
         <div className="w-full bg-[#f3e9dc] text-gray-800 text-sm md:text-base font-medium shadow-sm flex items-center justify-center py-3">
           Envío gratis en pedidos superiores a 80€
@@ -74,28 +65,35 @@ export default function Navbar() {
 
         {/* Nav */}
         <nav className="w-full bg-white shadow-sm px-4 md:px-8 py-4 relative z-50">
-          <div className="flex items-center justify-between md:justify-between">
-            {/* Left: Mobile menu button */}
-            <div className="flex items-center gap-2 md:gap-6">
-              <button
-                className="md:hidden p-2 rounded-2xl bg-gray-200 hover:bg-gray-300 transition-all"
-                onClick={() => setMenuOpen(!menuOpen)}
-              >
-                {menuOpen ? <X className="w-6 h-6 text-gray-800" /> : <Menu className="w-6 h-6 text-gray-800" />}
-              </button>
+          <div className="flex items-center justify-between">
+            {/* Logo center */}
+            <Link href="/" className="text-2xl md:text-3xl font-display font-bold text-rose-700 select-none mx-auto">
+              Mōa
+            </Link>
 
-              {/* Logo */}
-              <Link href="/" className="text-2xl md:text-3xl font-display font-bold text-rose-700 select-none">
-                Mōa
+            {/* Right icons */}
+            <div className="flex items-center gap-4 md:gap-6 absolute right-4">
+              {/* Search */}
+              <div ref={searchRef}>
+                <button
+                  onClick={() => setSearchOpen(!searchOpen)}
+                  className="p-2 rounded-full hover:bg-gray-200 transition-all"
+                >
+                  {searchOpen ? <X className="w-6 h-6 text-gray-700" /> : <Search className="w-6 h-6 text-gray-700" />}
+                </button>
+              </div>
+
+              {/* Cart */}
+              <Link href="/cart" className="relative">
+                <ShoppingBag className="w-6 h-6 text-gray-700 hover:text-rose-600 transition-all" />
+                {items.length > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-rose-600 text-white text-xs px-2 py-0.5 rounded-full flex items-center justify-center font-medium shadow">
+                    {items.length}
+                  </span>
+                )}
               </Link>
-            </div>
 
-            {/* Desktop links */}
-            <div className="hidden md:flex items-center gap-6">
-              <Link href="/about" className="text-gray-700 hover:text-rose-600 font-medium transition-colors">
-                Sobre nosotros
-              </Link>
-
+              {/* User */}
               {user === undefined && <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />}
               {user === null && (
                 <Link href="/login">
@@ -105,55 +103,16 @@ export default function Navbar() {
               {user && (
                 <div className="relative" ref={menuRef}>
                   <button
-                    onClick={() => setMenuOpen(!menuOpen)}
+                    onClick={() => setShowNavbar(prev => !prev)}
                     className="flex items-center gap-1 w-10 h-10 rounded-full bg-rose-600 text-white justify-center font-semibold shadow hover:bg-rose-700 transition-all"
                   >
                     {user.email ? user.email[0].toUpperCase() : 'U'}
                     <ChevronDown className="w-4 h-4" />
                   </button>
-                  {menuOpen && (
-                    <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded-lg shadow text-sm z-50">
-                      <Link href="/user" className="block px-4 py-2 hover:bg-rose-50 text-gray-700" onClick={() => setMenuOpen(false)}>
-                        Area Usuario
-                      </Link>
-                      <button onClick={handleLogout} className="block w-full text-left px-4 py-2 hover:bg-rose-50 text-gray-700">
-                        Cerrar Sesión
-                      </button>
-                    </div>
-                  )}
                 </div>
               )}
-
-              {/* Search & Cart */}
-              <div className="flex items-center gap-4">
-                <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 rounded-full hover:bg-gray-200 transition-all">
-                  <Search className="w-6 h-6 text-gray-700" />
-                </button>
-                <Link href="/cart" className="relative">
-                  <ShoppingBag className="w-6 h-6 text-gray-700 hover:text-rose-600 transition-all" />
-                  {items.length > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-rose-600 text-white text-xs px-2 py-0.5 rounded-full flex items-center justify-center font-medium shadow">
-                      {items.length}
-                    </span>
-                  )}
-                </Link>
-              </div>
             </div>
           </div>
-
-          {/* Mobile menu dropdown */}
-          {menuOpen && (
-            <div className="md:hidden mt-2 bg-white border-t border-gray-200 shadow-md flex flex-col gap-2 px-4 py-2">
-              <Link href="/about" className="py-2 px-2 hover:bg-gray-100 rounded">Sobre nosotros</Link>
-              {user === null && <Link href="/login" className="py-2 px-2 hover:bg-gray-100 rounded">Login</Link>}
-              {user && (
-                <>
-                  <Link href="/user" className="py-2 px-2 hover:bg-gray-100 rounded">Área Usuario</Link>
-                  <button onClick={handleLogout} className="py-2 px-2 hover:bg-gray-100 rounded text-left">Cerrar Sesión</button>
-                </>
-              )}
-            </div>
-          )}
         </nav>
 
         {/* Search bar just below navbar */}
@@ -170,7 +129,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Spacer for navbar */}
+      {/* Spacer */}
       <div className="h-28" />
     </>
   );
