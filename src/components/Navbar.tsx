@@ -130,7 +130,7 @@ export default function Navbar() {
       </div>
 
       {/* Spacer */}
-      <div className="h-28" />
+      <div className="h-22" />
     </>
   );
 }
