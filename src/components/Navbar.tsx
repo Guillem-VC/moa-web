@@ -13,14 +13,20 @@ export default function Navbar() {
   const { items, resetCart } = useCartStore();
   const router = useRouter();
 
+  // Estats
+  const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [showNavbar, setShowNavbar] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
 
+  // Refs
   const lastScrollY = useRef(0);
-  const searchRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Scroll behavior
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > lastScrollY.current && window.scrollY > 100) {
@@ -30,23 +36,47 @@ export default function Navbar() {
         setShowNavbar(true);
       }
       lastScrollY.current = window.scrollY;
+      if (menuOpen) setMenuOpen(false);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [menuOpen]);
 
+  // Click outside per tancar menú i cerca
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) setSearchOpen(false);
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {}
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setMenuOpen(false);
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) setSearchOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Focus input quan s'obre la cerca
   useEffect(() => {
     if (searchOpen) searchInputRef.current?.focus();
   }, [searchOpen]);
+
+  // Cerca a Supabase
+  useEffect(() => {
+    if (!searchQuery) {
+      setSearchResults([]);
+      return;
+    }
+
+    const fetchProducts = async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .ilike('name', `%${searchQuery}%`)
+        .limit(10);
+
+      if (!error && data) setSearchResults(data);
+    };
+
+    const timeout = setTimeout(fetchProducts, 300); // debounce
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -73,15 +103,13 @@ export default function Navbar() {
 
             {/* Right icons */}
             <div className="flex items-center gap-4 md:gap-6 absolute right-4">
-              {/* Search */}
-              <div ref={searchRef}>
-                <button
-                  onClick={() => setSearchOpen(!searchOpen)}
-                  className="p-2 rounded-full hover:bg-gray-200 transition-all"
-                >
-                  {searchOpen ? <X className="w-6 h-6 text-gray-700" /> : <Search className="w-6 h-6 text-gray-700" />}
-                </button>
-              </div>
+              {/* Search button */}
+              <button
+                onClick={() => setSearchOpen(prev => !prev)}
+                className="p-2 rounded-full hover:bg-gray-200 transition-all"
+              >
+                {searchOpen ? <X className="w-6 h-6 text-gray-700" /> : <Search className="w-6 h-6 text-gray-700" />}
+              </button>
 
               {/* Cart */}
               <Link href="/cart" className="relative">
@@ -103,34 +131,74 @@ export default function Navbar() {
               {user && (
                 <div className="relative" ref={menuRef}>
                   <button
-                    onClick={() => setShowNavbar(prev => !prev)}
+                    onClick={() => setMenuOpen(!menuOpen)}
                     className="flex items-center gap-1 w-10 h-10 rounded-full bg-rose-600 text-white justify-center font-semibold shadow hover:bg-rose-700 transition-all"
                   >
                     {user.email ? user.email[0].toUpperCase() : 'U'}
                     <ChevronDown className="w-4 h-4" />
                   </button>
+                  {menuOpen && (
+                    <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded-lg shadow text-sm z-50">
+                      <Link href="/user" className="block px-4 py-2 hover:bg-rose-50 text-gray-700" onClick={() => setMenuOpen(false)}>
+                        Área Usuario
+                      </Link>
+                      <button onClick={handleLogout} className="block w-full text-left px-4 py-2 hover:bg-rose-50 text-gray-700">
+                        Cerrar Sesión
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           </div>
         </nav>
 
-        {/* Search bar just below navbar */}
-        <div className={`w-full bg-white border-t border-gray-200 transition-max-h duration-300 overflow-hidden ${searchOpen ? 'max-h-24 py-2' : 'max-h-0 py-0'}`}>
-          <div className="w-full px-4 md:px-8">
-            <div className="flex items-center gap-4 bg-white rounded-md px-4 py-2 shadow-md">
-              <Search className="w-6 h-6 text-gray-700" />
-              <input ref={searchInputRef} type="text" placeholder="Search for..." className="w-full focus:outline-none focus:ring-2 focus:ring-rose-500" />
-              <button onClick={() => setSearchOpen(false)}>
-                <X className="w-6 h-6 text-gray-700" />
+        {/* Search bar a pantalla completa */}
+        {searchOpen && (
+          <div ref={searchContainerRef} className="fixed top-28 left-0 w-screen bg-white z-50 shadow-md border-t border-gray-200 px-4 md:px-8 py-3">
+            <div className="relative w-full">
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Buscar producto..."
+                className="w-full px-12 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {/* Icones sobreposats */}
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-700" />
+              <button
+                onClick={() => setSearchOpen(false)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-700"
+              >
+                <X className="w-6 h-6" />
               </button>
             </div>
+
+            {/* Resultats */}
+            {searchResults.length > 0 && (
+              <div className="mt-2 bg-white border border-gray-200 rounded-md shadow overflow-hidden">
+                {searchResults.map((prod) => (
+                  <Link
+                    key={prod.id}
+                    href={`/product/${prod.id}`}
+                    className="block px-4 py-2 hover:bg-rose-50 text-gray-700"
+                    onClick={() => {
+                      setSearchOpen(false);
+                      setSearchQuery('');
+                    }}
+                  >
+                    {prod.name}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Spacer */}
-      <div className="h-22" />
+      {/* Spacer for navbar */}
+      <div className="h-28" />
     </>
   );
 }
