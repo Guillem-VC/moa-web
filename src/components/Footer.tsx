@@ -77,7 +77,7 @@ const Footer = () => {
         {/* Bottom */}
         <div className="border-t border-border/20 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © 2024 Mōa. Todos los derechos reservados.
+            © {new Date().getFullYear()} <strong>Mōa</strong> — For women who lift more than weights.
           </p>
           <div className="flex gap-4">
             <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">

@@ -20,7 +20,7 @@ export default function ForgotPasswordPage() {
 
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/login/update-password`,
+      redirectTo: `${window.location.origin}/signin/update-password`,
     });
     setLoading(false);
 
@@ -85,7 +85,7 @@ export default function ForgotPasswordPage() {
 
         <p className="mt-6 text-center text-gray-700 text-sm">
           Torna a{" "}
-          <a href="/login" className="text-rose-600 hover:underline font-medium">
+          <a href="/signin" className="text-rose-600 hover:underline font-medium">
             Inicia sessió
           </a>
         </p>

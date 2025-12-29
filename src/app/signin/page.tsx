@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { useCartStore } from '@/store/cartStore' // <-- importa el store
 
-export default function LoginPage() {
+export default function SigninPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -16,7 +16,7 @@ export default function LoginPage() {
   const router = useRouter()
   const { syncCartWithSupabase } = useCartStore()
 
-  const handleLogin = async () => {
+  const handleSignin = async () => {
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
@@ -29,7 +29,7 @@ export default function LoginPage() {
     }
   }
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleSignin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       //options: { redirectTo: 'https://moa-web-v1.vercel.app/auth/callback' }
@@ -40,7 +40,7 @@ export default function LoginPage() {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && email && password) {
-      handleLogin()
+      handleSignin()
     }
   }
 
@@ -106,7 +106,7 @@ export default function LoginPage() {
 
         <p className="text-right mb-4">
           <a
-            href="/login/forgot-password"
+            href="/signin/forgot-password"
             className="text-sm text-rose-600 hover:underline"
           >
             Has oblidat la contrasenya?
@@ -114,7 +114,7 @@ export default function LoginPage() {
         </p>
 
         <button
-          onClick={handleLogin}
+          onClick={handleSignin}
           disabled={loading}
           className="w-full bg-rose-600 text-white p-2 rounded hover:bg-rose-700 transition font-medium"
         >
@@ -128,7 +128,7 @@ export default function LoginPage() {
         </div>
 
         <button
-          onClick={handleGoogleLogin}
+          onClick={handleGoogleSignin}
           className="w-full flex items-center justify-center gap-2 border border-gray-300 placeholder-gray-500 text-black bg-white hover:bg-gray-300 p-2 rounded transition font-medium"
         >
           <FcGoogle size={22} />

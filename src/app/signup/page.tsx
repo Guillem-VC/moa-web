@@ -103,7 +103,7 @@ export default function SignupPage() {
 
         <p className="mt-4 text-center text-gray-700">
           Ja tens compte?{' '}
-          <Link href="/login" className="text-rose-600 hover:underline">
+          <Link href="/signin" className="text-rose-600 hover:underline">
             Inicia sessió
           </Link>
         </p>

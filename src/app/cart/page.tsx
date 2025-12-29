@@ -50,7 +50,7 @@ export default function CartPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       localStorage.setItem('cart_items', JSON.stringify(items))
-      router.push('/login')
+      router.push('/signin')
       return
     }
 

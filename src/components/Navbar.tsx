@@ -124,7 +124,7 @@ export default function Navbar() {
               {/* User */}
               {user === undefined && <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />}
               {user === null && (
-                <Link href="/login">
+                <Link href="/signin">
                   <User className="w-6 h-6 text-gray-700 hover:text-rose-600 cursor-pointer transition-all" />
                 </Link>
               )}
@@ -198,7 +198,7 @@ export default function Navbar() {
       </div>
 
       {/* Spacer for navbar */}
-      <div className="h-28" />
+      <div className="h-24" />
     </>
   );
 }

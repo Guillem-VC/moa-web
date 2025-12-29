@@ -86,7 +86,7 @@ export default function Home() {
         {/* 👇 aquí poses el teu .gif */}
         <img
           src="/gos.gif" // guarda el teu gif dins /public
-          alt="Carregant..."
+          alt="Cargando..."
           className="w-20 sm:w-24 md:w-32 lg:w-40 h-auto"
         />
       </div>
@@ -170,10 +170,6 @@ export default function Home() {
             ))}
           </ul>
         </section>
-
-        <footer className="text-center py-10 border-t text-gray-600 backdrop-blur-sm bg-white/40">
-          © {new Date().getFullYear()} <strong>Mōa</strong> — For women who lift more than weights.
-        </footer>
       </div>
     </div>
   )

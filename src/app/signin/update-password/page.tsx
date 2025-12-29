@@ -43,7 +43,7 @@ export default function UpdatePasswordPage() {
 
       // Logout per eliminar sessió temporal
       await supabase.auth.signOut();
-      setTimeout(() => router.push('/login'), 2000);
+      setTimeout(() => router.push('/signin'), 2000);
     }
   };
 

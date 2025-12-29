@@ -92,7 +92,7 @@ export default function ProductDetail() {
 
   const handleNotifyMe = async (variant: any) => {
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session?.user?.email) return router.push('/login')
+    if (!session?.user?.email) return router.push('/signin')
 
     const email = session.user.email
     const { error } = await supabase.from('stock_notifications').insert([
