@@ -39,11 +39,25 @@ export default function SignupPage() {
     })
     setLoading(false)
 
-    if (error) setError(error.message)
-    else {
-      alert('Compte creat correctament! Revisa el teu email.')
-      router.push('/')
-    }  
+    if (error) {
+      setError(error.message)
+      return
+    }
+     // 🔹 CREAR PROFILE SI EL USUARIO EXISTE
+    if (data?.user) {
+      await fetch('/api/profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: data.user.id,
+          full_name: fullName,
+          email: email
+        })
+      })
+    }
+    alert('Cuenta creada correctamente! Revisa tu email.')
+    router.push('/')
+    router.refresh()
   }
 
   return (
@@ -63,7 +77,7 @@ export default function SignupPage() {
 
         <input
           type="text"
-          placeholder="Nom complet"
+          placeholder="Nombre completo"
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
           className="w-full p-2 mb-4 border border-gray-300 rounded placeholder-gray-500 text-black focus:outline-none focus:ring-2 focus:ring-rose-500"
@@ -71,7 +85,7 @@ export default function SignupPage() {
 
         <input
           type="email"
-          placeholder="Correu electrònic"
+          placeholder="Correo electrónico"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="w-full p-2 mb-4 border border-gray-300 rounded placeholder-gray-500 text-black focus:outline-none focus:ring-2 focus:ring-rose-500"
@@ -79,7 +93,7 @@ export default function SignupPage() {
 
         <input
           type="email"
-          placeholder="Confirma el correu electrònic"
+          placeholder="Confirma el correo electrònico"
           value={confirmEmail}
           onChange={(e) => setConfirmEmail(e.target.value)}
           className="w-full p-2 mb-4 border border-gray-300 rounded placeholder-gray-500 text-black focus:outline-none focus:ring-2 focus:ring-rose-500"
@@ -87,7 +101,7 @@ export default function SignupPage() {
 
         <input
           type="password"
-          placeholder="Contrasenya"
+          placeholder="Contraseña"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="w-full p-2 mb-4 border border-gray-300 rounded placeholder-gray-500 text-black focus:outline-none focus:ring-2 focus:ring-rose-500"
@@ -98,7 +112,7 @@ export default function SignupPage() {
           disabled={loading}
           className="w-full bg-rose-600 text-white p-2 rounded hover:bg-rose-700 transition"
         >
-          {loading ? 'Creant compte...' : 'Registrar-se'}
+          {loading ? 'Creando cuenta...' : 'Registrar-se'}
         </button>
 
         <p className="mt-4 text-center text-gray-700">

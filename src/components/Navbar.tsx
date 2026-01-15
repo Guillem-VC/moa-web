@@ -9,7 +9,7 @@ import { useUser } from './UserContext';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function Navbar() {
-  const user = useUser();
+  const [user, setUser] = useState<any | null | undefined>(undefined)
   const { items, resetCart } = useCartStore();
   const router = useRouter();
 
@@ -25,6 +25,48 @@ export default function Navbar() {
   const menuRef = useRef<HTMLDivElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+ useEffect(() => {
+  const loadUser = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+
+    if (!session) {
+      setUser(null)
+      return
+    }
+
+    try {
+      const res = await fetch('/api/auth', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+
+      if (!res.ok) {
+        // només signOut si és un error definitiu
+        setUser(null)
+        return
+      }
+
+      const data = await res.json()
+      setUser(data.user)
+    } catch (err) {
+      console.error('Error fetching user:', err)
+      setUser(null)
+    }
+  }
+
+  loadUser()
+
+  const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+    // només recarregar si hi ha session vàlida
+    if (session) loadUser()
+    else setUser(null)
+  })
+
+  return () => listener.subscription.unsubscribe()
+}, [])
+
+
+
 
   // Scroll behavior
   useEffect(() => {
@@ -81,7 +123,8 @@ export default function Navbar() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     resetCart();
-    router.push('/');
+    window.location.href = '/'
+
   };
 
   return (
