@@ -5,7 +5,6 @@ import { ShoppingBag, User, ChevronDown, Search, X } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
-import { useUser } from './UserContext';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function Navbar() {

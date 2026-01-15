@@ -149,25 +149,6 @@ export async function POST(req: NextRequest) {
     // ❌ NO actualitzis status aquí
     // ❌ NO toquis stock aquí
     // ======================================================
-
-    /*
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      payment_method_types: ['card'],
-      line_items,
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/cancel`,
-      metadata: {
-        order_id: order.id, // 🔑 CLAU pel webhook
-      },
-    })
-
-    return NextResponse.json({
-      checkout_url: session.url,
-    })
-    */
    /*
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
@@ -179,7 +160,7 @@ export async function POST(req: NextRequest) {
         order_id: order.id,
       },
     })
-*/
+    */  
     return NextResponse.json({ success: true, order_id: order.id })
   } catch (err) {
     console.error(err)

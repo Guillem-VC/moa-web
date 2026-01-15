@@ -1,24 +1,25 @@
 'use client';
+
 import type { ReactNode } from 'react';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { UserContext, type User } from '@/components/UserContext';
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User>(undefined);
+  const [user, setUser] = useState<any | null | undefined>(undefined);
 
   useEffect(() => {
-    const initUser = async () => {
+    const loadUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null); // ara és compatible amb tipus User
+      setUser(session?.user ?? null);
     };
-    initUser();
+
+    loadUser();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null); // també compatible
+      setUser(session?.user ?? null);
     });
 
     return () => listener.subscription.unsubscribe();
@@ -27,11 +28,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="es">
       <body className="flex flex-col min-h-screen">
-        <UserContext.Provider value={user}>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </UserContext.Provider>
+        <Navbar />
+        <main className="flex-1">{children}</main>
+        <Footer />
       </body>
     </html>
   );
