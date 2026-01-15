@@ -47,14 +47,72 @@ export default function CartPage() {
   }, [addToCart, loadCart])
 
   const handleCheckout = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      localStorage.setItem('cart_items', JSON.stringify(items))
+    const { data: { session } } = await supabase.auth.getSession()
+
+    if (!session) {
       router.push('/signin')
       return
     }
 
-    alert('Compra iniciada!')
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`, // 🔑 CLAU
+        },
+        body: JSON.stringify({
+          items: items.map(item => ({
+            product_id: item.product_id,
+            variant_size: item.variant_size,
+            quantity: item.quantity,
+          })),
+        }),
+      })
+  /*
+      if (!res.ok) {
+        throw new Error('Error iniciant el checkout')
+      }
+
+      const { url } = await res.json()
+      window.location.href = url
+    } catch (err) {
+      console.error(err)
+      alert('No s’ha pogut iniciar el pagament')
+    }
+      */
+    const data = await res.json()
+    console.log('Checkout response:', data)
+
+    // Dummy: només alert per provar
+    alert(`Orden creada correctament amb id: ${data.order_id}`)
+
+    // ⏳ SIMULACIÓ STRIPE (20 segons)
+    setTimeout(async () => {
+      try {
+        await fetch('/api/orders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            order_id: data.order_id,
+          }),
+        })
+
+        alert('Pagament simulat: ordre marcada com a pagada')
+        router.push('/')
+        
+      } catch (err) {
+        console.error('Error confirmant ordre', err)
+      }
+    }, 10000)
+
+    } catch (err) {
+      console.error(err)
+      alert('No s’ha pogut iniciar el pagament')
+    }
   }
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
