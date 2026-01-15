@@ -39,5 +39,5 @@ export default function AuthCallbackPage() {
     handleCallback()
   }, [router])
 
-  return <div>Procesant login...</div>
+  return <div>Processing login</div>
 }
