@@ -87,7 +87,7 @@ export default function CartPage() {
     // Dummy: només alert per provar
     alert(`Orden creada correctament amb id: ${data.order_id}`)
 
-    // ⏳ SIMULACIÓ STRIPE (20 segons)
+    // ⏳ SIMULACIÓ STRIPE (10 segons)
     setTimeout(async () => {
       try {
         await fetch('/api/orders', {
