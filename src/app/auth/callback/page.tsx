@@ -3,9 +3,11 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
+import { useCartStore } from '@/store/cartStore'
 
 export default function AuthCallbackPage() {
   const router = useRouter()
+  const { syncCartWithSupabase } = useCartStore()
 
   useEffect(() => {
     async function handleCallback() {
@@ -22,6 +24,10 @@ export default function AuthCallbackPage() {
         return
       }
 
+      console.log('[AuthCallback] User detected, syncing cart...')
+      // 🔹 Sincronitzem el carret local amb Supabase
+      await syncCartWithSupabase()
+
       // Crida la teva API per crear profile si no existeix
       await fetch('/api/profiles', {
         method: 'POST',
@@ -37,7 +43,7 @@ export default function AuthCallbackPage() {
     }
 
     handleCallback()
-  }, [router])
+  }, [router, syncCartWithSupabase])
 
   return <div>Processing login</div>
 }

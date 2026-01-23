@@ -85,6 +85,10 @@ serve(async (req) => {
       </li>
     `).join("");
 
+    console.log("ORDER OBJECT:", JSON.stringify(order, null, 2));
+    console.log("paid_at raw value:", order.paid_at);
+    console.log("paid_at typeof:", typeof order.paid_at);
+
     const paidDate = order.paid_at
       ? new Date(order.paid_at).toLocaleString("es-ES", {
           day: "numeric",

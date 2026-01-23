@@ -12,7 +12,6 @@ export default function Home() {
   const [filterType, setFilterType] = useState<string>('Todo')
   const [types, setTypes] = useState<string[]>([])
   const productsRef = useRef<HTMLElement>(null)
-  const { loadCart } = useCartStore()
 
   const filteredProducts = useMemo(() => {
     if (filterType === 'Todo') return allProducts
@@ -50,25 +49,6 @@ export default function Home() {
 
   useEffect(() => {
     const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        const guestCart = localStorage.getItem('cart_items')
-        if (guestCart) {
-          const guestItems = JSON.parse(guestCart)
-          for (const item of guestItems) {
-            await useCartStore.getState().addToCart(item)
-          }
-          localStorage.removeItem('cart_items')
-        }
-        await useCartStore.getState().syncCartWithSupabase()
-      } else {
-        const guestCart = localStorage.getItem('cart_items')
-        if (guestCart) {
-          const guestItems = JSON.parse(guestCart)
-          guestItems.forEach((item: any) => useCartStore.getState().addToCart(item))
-        }
-      }
-
       await fetchTypes()
       await fetchProducts()
 

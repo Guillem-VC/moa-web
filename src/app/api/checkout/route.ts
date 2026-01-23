@@ -149,7 +149,7 @@ export async function POST(req: NextRequest) {
     // ❌ NO actualitzis status aquí
     // ❌ NO toquis stock aquí
     // ======================================================
-   /*
+   /* STRIPE
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
@@ -160,8 +160,9 @@ export async function POST(req: NextRequest) {
         order_id: order.id,
       },
     })
-    */  
+    */
     return NextResponse.json({ success: true, order_id: order.id })
+    //return NextResponse.json({ success: true, order_id: order.id, url: session.url })
   } catch (err) {
     console.error(err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

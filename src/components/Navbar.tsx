@@ -24,47 +24,46 @@ export default function Navbar() {
   const menuRef = useRef<HTMLDivElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  
 
- useEffect(() => {
-  const loadUser = async () => {
-    const { data: { session } } = await supabase.auth.getSession()
+  useEffect(() => {
+    const loadUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
 
-    if (!session) {
-      setUser(null)
-      return
-    }
-
-    try {
-      const res = await fetch('/api/auth', {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      })
-
-      if (!res.ok) {
-        // només signOut si és un error definitiu
+      if (!session) {
         setUser(null)
         return
       }
 
-      const data = await res.json()
-      setUser(data.user)
-    } catch (err) {
-      console.error('Error fetching user:', err)
-      setUser(null)
+      try {
+        const res = await fetch('/api/auth', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        })
+
+        if (!res.ok) {
+          // només signOut si és un error definitiu
+          setUser(null)
+          return
+        }
+
+        const data = await res.json()
+        setUser(data.user)
+      } catch (err) {
+        console.error('Error fetching user:', err)
+        setUser(null)
+      }
     }
-  }
 
-  loadUser()
+    loadUser()
 
-  const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-    // només recarregar si hi ha session vàlida
-    if (session) loadUser()
-    else setUser(null)
-  })
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      // només recarregar si hi ha session vàlida
+      if (session) loadUser()
+      else setUser(null)
+    })
 
-  return () => listener.subscription.unsubscribe()
-}, [])
-
-
+    return () => listener.subscription.unsubscribe()
+  }, [])
 
 
   // Scroll behavior
@@ -158,7 +157,7 @@ export default function Navbar() {
                 <ShoppingBag className="w-6 h-6 text-gray-700 hover:text-rose-600 transition-all" />
                 {items.length > 0 && (
                   <span className="absolute -top-2 -right-2 bg-rose-600 text-white text-xs px-2 py-0.5 rounded-full flex items-center justify-center font-medium shadow">
-                    {items.length}
+                    {items.reduce((sum, item) => sum + item.quantity, 0)}
                   </span>
                 )}
               </Link>

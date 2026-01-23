@@ -20,14 +20,16 @@ export default function SigninPage() {
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
+
     if (error) {
       setError(error.message)
     } else {
-      // 🔹 Sync carrito local abans de redirigir
+      // 🔹 Sync carrito local només un cop abans de redirigir
       await syncCartWithSupabase()
       router.push('/')
     }
   }
+
 
   const handleGoogleSignin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({

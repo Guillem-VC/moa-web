@@ -38,17 +38,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Order items not found' }, { status: 500 })
     }
 
-    // 3️⃣ Marcar ordre com a pagada
-    const { error: updateError } = await supabase
+    // 3️⃣ Marcar el paid_at
+    const { error: updatePaidAtError  } = await supabase
       .from('orders')
       .update({
-        status: 'paid',
         paid_at: new Date().toISOString(),
       })
       .eq('id', order.id)
+      .eq('status', 'pending'); 
 
-    if (updateError) {
-      return NextResponse.json({ error: 'Error updating order' }, { status: 500 })
+    if (updatePaidAtError ) {
+      return NextResponse.json({ error: 'Error updating paid_at' }, { status: 500 })
+    }
+
+    // 3️⃣ Marcar el status a apaid
+    const { error: updateStatusError  } = await supabase
+      .from('orders')
+      .update({
+        status: 'paid',
+      })
+      .eq('id', order.id)
+      .eq('status', 'pending');
+
+    if (updateStatusError ) {
+      return NextResponse.json({ error: 'Error updating status' }, { status: 500 })
     }
 
     // 4️⃣ Descomptar stock per cada variant

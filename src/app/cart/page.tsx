@@ -5,46 +5,21 @@ import { useCartStore, AddCartItem } from '@/store/cartStore'
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 
-export default function CartPage() {
-  const { items, loadCart, removeFromCart, clearCart, addToCart } = useCartStore()
-  const [loading, setLoading] = useState(true)
-  const router = useRouter()
+  export default function CartPage() {
+    const { items, loadCart, removeFromCart, clearCart, addToCart } = useCartStore()
+    const [loading, setLoading] = useState(true)
+    const router = useRouter()
 
-  useEffect(() => {
-    const initCart = async () => {
+    useEffect(() => {
+    const init = async () => {
       setLoading(true)
-
-      const { data: { user } } = await supabase.auth.getUser()
-
-      // Si no hi ha usuari, només carreguem el carrito local
-      if (!user) {
-        const guestCart = localStorage.getItem('cart_items')
-        if (guestCart) {
-          const guestItems: AddCartItem[] = JSON.parse(guestCart)
-          // Posem els items al store local
-          guestItems.forEach((item) => addToCart(item))
-        }
-        setLoading(false)
-        return
-      }
-
-      // Si hi ha usuari, primer mirem si hi ha carrito local i fem merge
-      const guestCart = localStorage.getItem('cart_items')
-      if (guestCart) {
-        const guestItems: AddCartItem[] = JSON.parse(guestCart)
-        for (const item of guestItems) {
-          await addToCart(item) // sincronitza amb Supabase
-        }
-        localStorage.removeItem('cart_items')
-      }
-
-      // Carreguem el carrito ja sincronitzat del Supabase
       await loadCart()
       setLoading(false)
     }
 
-    initCart()
-  }, [addToCart, loadCart])
+    init()
+  }, [loadCart])
+
 
   const handleCheckout = async () => {
     const { data: { session } } = await supabase.auth.getSession()
@@ -69,23 +44,25 @@ export default function CartPage() {
           })),
         }),
       })
-  /*
+  
       if (!res.ok) {
         throw new Error('Error iniciant el checkout')
       }
 
       const { url } = await res.json()
+      console.log(url);
       window.location.href = url
     } catch (err) {
       console.error(err)
       alert('No s’ha pogut iniciar el pagament')
     }
-      */
+    
+    /*
     const data = await res.json()
     console.log('Checkout response:', data)
-
+    
     // Dummy: només alert per provar
-    alert(`Orden creada correctament amb id: ${data.order_id}`)
+    //alert(`Orden creada correctament amb id: ${data.order_id}`)
 
     // ⏳ SIMULACIÓ STRIPE (10 segons)
     setTimeout(async () => {
@@ -113,6 +90,7 @@ export default function CartPage() {
       console.error(err)
       alert('No s’ha pogut iniciar el pagament')
     }
+      */
   }
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
