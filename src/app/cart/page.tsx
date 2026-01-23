@@ -48,7 +48,7 @@ import { useRouter } from 'next/navigation'
       if (!res.ok) {
         throw new Error('Error iniciant el checkout')
       }
-
+/*
       const { url } = await res.json()
       console.log(url);
       window.location.href = url
@@ -56,8 +56,8 @@ import { useRouter } from 'next/navigation'
       console.error(err)
       alert('No s’ha pogut iniciar el pagament')
     }
+    */
     
-    /*
     const data = await res.json()
     console.log('Checkout response:', data)
     
@@ -90,7 +90,7 @@ import { useRouter } from 'next/navigation'
       console.error(err)
       alert('No s’ha pogut iniciar el pagament')
     }
-      */
+      
   }
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
