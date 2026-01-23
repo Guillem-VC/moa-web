@@ -1,40 +1,40 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useCartStore, AddCartItem } from '@/store/cartStore'
+import { useCartStore } from '@/store/cartStore'
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 
-  export default function CartPage() {
-    const { items, loadCart, removeFromCart, clearCart, addToCart } = useCartStore()
-    const [loading, setLoading] = useState(true)
-    const router = useRouter()
+export default function CartPage() {
+  const { items, loadCart, removeFromCart, addToCart, clearCart } = useCartStore()
+  const [loading, setLoading] = useState(true)
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
+  const router = useRouter()
 
-    useEffect(() => {
+  useEffect(() => {
     const init = async () => {
       setLoading(true)
       await loadCart()
       setLoading(false)
     }
-
     init()
   }, [loadCart])
 
-
-  const handleCheckout = async () => {
+  const handleCheckout = async () => {   
     const { data: { session } } = await supabase.auth.getSession()
-
     if (!session) {
       router.push('/signin')
+      setCheckoutLoading(false)
       return
     }
+    setCheckoutLoading(true) // ✅ bloquejem el botó
 
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`, // 🔑 CLAU
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           items: items.map(item => ({
@@ -44,61 +44,44 @@ import { useRouter } from 'next/navigation'
           })),
         }),
       })
-  
-      if (!res.ok) {
-        throw new Error('Error iniciant el checkout')
-      }
-/*
-      const { url } = await res.json()
-      console.log(url);
-      window.location.href = url
-    } catch (err) {
-      console.error(err)
-      alert('No s’ha pogut iniciar el pagament')
-    }
-    */
-    
-    const data = await res.json()
-    console.log('Checkout response:', data)
-    
-    // Dummy: només alert per provar
-    //alert(`Orden creada correctament amb id: ${data.order_id}`)
 
-    // ⏳ SIMULACIÓ STRIPE (10 segons)
-    setTimeout(async () => {
-      try {
-        await fetch('/api/orders', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            order_id: data.order_id,
-          }),
-        })
+      if (!res.ok) throw new Error('Error iniciant el checkout')
 
-        alert('Pagament simulat: ordre marcada com a pagada')
-        router.push('/')
-        
-      } catch (err) {
-        console.error('Error confirmant ordre', err)
-      }
-    }, 10000)
+      const data = await res.json()
+      console.log('Checkout response:', data)
+
+      // Simulació pagament (dummy)
+      setTimeout(async () => {
+        try {
+          await fetch('/api/orders', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ order_id: data.order_id }),
+          })
+          alert('Pagament simulat: ordre marcada com a pagada')
+          clearCart() 
+          router.push('/')
+        } catch (err) {
+          console.error('Error confirmant ordre', err)
+        } finally {
+          setCheckoutLoading(false)
+        }
+      }, 5000)
 
     } catch (err) {
       console.error(err)
       alert('No s’ha pogut iniciar el pagament')
+      setCheckoutLoading(false)
     }
-      
   }
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
   if (loading)
-    return (
-      <div className="text-center mt-24 text-gray-600">Carregant el carrito...</div>
-    )
+    return <div className="text-center mt-24 text-gray-600">Cargando el carrito...</div>
 
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -114,10 +97,10 @@ import { useRouter } from 'next/navigation'
 
       {/* Caixa central */}
       <div className="relative z-10 w-full max-w-3xl p-8 bg-white/80 backdrop-blur-md shadow-lg rounded-2xl">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">El teu carrito</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">Tu carrito</h1>
 
         {items.length === 0 && (
-          <p className="text-center text-gray-600 mt-6">El teu carrito és buit 🛒</p>
+          <p className="text-center text-gray-600 mt-6">Tu carrito está vacío 🛒</p>
         )}
 
         <ul className="space-y-4">
@@ -138,10 +121,28 @@ import { useRouter } from 'next/navigation'
                   <p className="text-rose-700 font-medium">
                     {item.price} € x {item.quantity} = {(item.price * item.quantity).toFixed(2)} €
                   </p>
+
+                  {/* Controls de quantitat */}
+                  <div className="flex items-center mt-2 gap-2">
+                    <button
+                      onClick={() => removeFromCart(item.id, 1)}
+                      className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                    >
+                      -
+                    </button>
+                    <span className="px-2">{item.quantity}</span>
+                    <button
+                      onClick={() => addToCart({ ...item, quantity: 1 })}
+                      className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
               </div>
+
               <button
-                onClick={() => removeFromCart(item.id)}
+                onClick={() => removeFromCart(item.id, item.quantity)}
                 className="text-sm text-rose-600 hover:underline"
               >
                 Eliminar
@@ -157,9 +158,13 @@ import { useRouter } from 'next/navigation'
             </p>
             <button
               onClick={handleCheckout}
-              className="mt-4 w-full md:w-auto bg-rose-600 text-white px-6 py-3 rounded-full hover:bg-rose-700 transition"
+              disabled={checkoutLoading} // ✅ deshabilitat mentre fa checkout
+              className={`mt-4 w-full md:w-auto px-6 py-3 rounded-full font-medium transition
+                ${checkoutLoading
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-rose-600 text-white hover:bg-rose-700'}`}
             >
-              Finalitzar compra 💳
+              {checkoutLoading ? 'Procesando...' : 'Finalizar compra 💳'}
             </button>
           </div>
         )}

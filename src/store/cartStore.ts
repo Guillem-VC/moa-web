@@ -25,7 +25,7 @@ export interface CartState {
   items: CartItem[]
   loadCart: () => Promise<void>
   addToCart: (item: AddCartItem) => Promise<void>
-  removeFromCart: (id: string) => Promise<void>
+  removeFromCart: (id: string, quantity: number) => Promise<void>
   clearCart: () => Promise<void>
   resetCart: () => void
   updateQuantity: (itemId: string, newQuantity: number) => Promise<void>
@@ -190,17 +190,34 @@ export const useCartStore = create<CartState>((set, get) => ({
 
   /* ---------- REMOVE ---------- */
 
-  removeFromCart: async (id) => {
+  removeFromCart: async (id: string, qty: number = 0) => {
     const { data: { user } } = await supabase.auth.getUser()
+    const item = get().items.find(i => i.id === id)
+    if (!item) return
 
-    if (user) {
-      await supabase.from('cart_items').delete().eq('id', id)
+    let updatedItems
+
+    if (qty <= 0 || qty >= item.quantity) {
+      // Si no especifiquem qty o és >= a l'item.quantity, eliminem completament
+      if (user) {
+        await supabase.from('cart_items').delete().eq('id', id)
+      }
+      updatedItems = get().items.filter(i => i.id !== id)
+    } else {
+      // Només restem qty unitats
+      const newQuantity = item.quantity - qty
+      if (user) {
+        await supabase.from('cart_items').update({ quantity: newQuantity }).eq('id', id)
+      }
+      updatedItems = get().items.map(i =>
+        i.id === id ? { ...i, quantity: newQuantity } : i
+      )
     }
 
-    const updatedItems = get().items.filter(i => i.id !== id)
     set({ items: updatedItems })
     if (!user) saveLocalCart(updatedItems)
   },
+
 
   /* ---------- CLEAR ---------- */
 
