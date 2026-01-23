@@ -10,7 +10,6 @@ import { supabase } from '@/lib/supabaseClient';
 export default function Navbar() {
   const [user, setUser] = useState<any | null | undefined>(undefined)
   const { items, resetCart } = useCartStore();
-  const router = useRouter();
 
   // Estats
   const [menuOpen, setMenuOpen] = useState(false);
