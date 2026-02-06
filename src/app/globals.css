@@ -1,8 +1,19 @@
 @import "tailwindcss";
 
+/* === Colors globals light === */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f5f1e7;  /* Beige professional */
+  --foreground: #171717;  /* Text fosc sobre beige */
+
+  /* Opcional: altres variables de la web */
+  --primary: #e11d48;   /* rose-600 */
+  --secondary: #fcd34d; /* yellow-300 */
+  --accent: #3b82f6;    /* blue-500 */
+}
+
+/* Forcem que el navegador interpreti tot en light mode */
+:root {
+  color-scheme: light;
 }
 
 @theme inline {
@@ -12,43 +23,30 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* === Body global === */
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* === Animacions === */
 @keyframes gradientMove {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-/* Animació zoom */
 /* Zoom animat suau */
 @keyframes heroZoomIn {
   from { transform: scale(1); }
   to   { transform: scale(1.12); }
 }
+
 .hero-image {
   opacity: 0;
   transform: scale(1);
-  transition:
-    opacity 1.6s ease-in-out,
-    transform 9s ease-out;
+  transition: opacity 1.6s ease-in-out, transform 9s ease-out;
   will-change: opacity, transform;
 }
 
@@ -58,39 +56,32 @@ body {
   z-index: 1;
 }
 
-
 .fade-image.show {
   opacity: 1;
 }
 
-
 .beige-image {
-  filter: 
-    saturate(0.85)
-    contrast(0.95)
-    brightness(1.05)
-    sepia(0.12);
+  filter: saturate(0.85) contrast(0.95) brightness(1.05) sepia(0.12);
 }
 
-/* Títol */
+/* Títols */
 .hero-title {
-  color: #ffffff;
+  color: #ffffff; /* text clar */
   text-shadow:
-    0 2px 10px rgba(0, 0, 0, 0.35),
-    0 0 30px rgba(0, 0, 0, 0.25);
+    0 2px 10px rgba(0,0,0,0.5),
+    0 0 30px rgba(0,0,0,0.4);
 }
 
-/* Subtítol */
 .hero-subtitle {
   color: #ffffff;
   text-shadow:
-    0 1px 6px rgba(0, 0, 0, 0.35),
-    0 0 12px rgba(0, 0, 0, 0.25);
+    0 1px 4px rgba(0,0,0,0.5),
+    0 0 12px rgba(0,0,0,0.3);
 }
 
 
+/* Gradient animat */
 .animate-gradient {
   background-size: 200% 200%;
   animation: gradientMove 10s ease infinite;
 }
-

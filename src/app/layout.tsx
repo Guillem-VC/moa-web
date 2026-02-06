@@ -25,11 +25,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     return () => listener.subscription.unsubscribe();
   }, []);
 
+
   return (
     <html lang="es">
       <body className="flex flex-col min-h-screen">
         <Navbar />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 pt-[104px]">{children}</main>
         <Footer />
       </body>
     </html>

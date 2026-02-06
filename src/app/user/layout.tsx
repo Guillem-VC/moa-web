@@ -13,7 +13,7 @@ export default function UserLayout({ children }: UserLayoutProps) {
   const menuItems = [
     { label: 'Perfil', href: '/user/profile' },
     { label: 'Adreces', href: '/user/addresses' },
-    { label: 'Pagaments', href: '/user/payments' },
+    { label: 'Pagaments', href: '/user/payment' },
     { label: 'Comandes', href: '/user/orders' },
   ]
 

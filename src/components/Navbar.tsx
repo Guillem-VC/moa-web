@@ -3,85 +3,86 @@
 import Link from 'next/link';
 import { ShoppingBag, User, ChevronDown, Search, X } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
-import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function Navbar() {
-  const [user, setUser] = useState<any | null | undefined>(undefined)
-  const { items, resetCart } = useCartStore();
+  const [user, setUser] = useState<any | null | undefined>(undefined);
+  const { items, resetCart, loadCart } = useCartStore();
 
-  // Estats
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [showNavbar, setShowNavbar] = useState(true);
+  const [showBanner, setShowBanner] = useState(true);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
 
-  // Refs
   const lastScrollY = useRef(0);
   const menuRef = useRef<HTMLDivElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  
 
+  // --- Load user ---
   useEffect(() => {
     const loadUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-
-      if (!session) {
-        setUser(null)
-        return
-      }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return setUser(null);
 
       try {
         const res = await fetch('/api/auth', {
           headers: { Authorization: `Bearer ${session.access_token}` },
-        })
+        });
+        if (!res.ok) return setUser(null);
 
-        if (!res.ok) {
-          // només signOut si és un error definitiu
-          setUser(null)
-          return
-        }
-
-        const data = await res.json()
-        setUser(data.user)
-      } catch (err) {
-        console.error('Error fetching user:', err)
-        setUser(null)
+        const data = await res.json();
+        setUser(data.user);
+      } catch {
+        setUser(null);
       }
-    }
+    };
 
-    loadUser()
+    loadUser();
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      // només recarregar si hi ha session vàlida
-      if (session) loadUser()
-      else setUser(null)
-    })
+      if (session) loadUser();
+      else setUser(null);
+    });
 
-    return () => listener.subscription.unsubscribe()
-  }, [])
+    return () => listener.subscription.unsubscribe();
+  }, []);
 
-
-  // Scroll behavior
+  // --- Scroll behavior ---
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > lastScrollY.current && window.scrollY > 100) {
+      const scrollY = window.scrollY;
+
+      // Scroll down -> hide navbar
+      if (scrollY > lastScrollY.current && scrollY > 80) {
         setShowNavbar(false);
         setSearchOpen(false);
       } else {
+        // Scroll up -> show navbar
         setShowNavbar(true);
       }
-      lastScrollY.current = window.scrollY;
+
+      // Banner només quan estem a dalt del tot
+      setShowBanner(scrollY < 200);
+
+      lastScrollY.current = scrollY;
+
       if (menuOpen) setMenuOpen(false);
     };
+
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [menuOpen]);
 
-  // Click outside per tancar menú i cerca
+  useEffect(() => {
+    loadCart()
+  }, [])
+
+  // --- Click outside ---
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) setMenuOpen(false);
@@ -91,17 +92,14 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Focus input quan s'obre la cerca
+  // --- Focus search input ---
   useEffect(() => {
     if (searchOpen) searchInputRef.current?.focus();
   }, [searchOpen]);
 
-  // Cerca a Supabase
+  // --- Search products ---
   useEffect(() => {
-    if (!searchQuery) {
-      setSearchResults([]);
-      return;
-    }
+    if (!searchQuery) return setSearchResults([]);
 
     const fetchProducts = async () => {
       const { data, error } = await supabase
@@ -113,42 +111,58 @@ export default function Navbar() {
       if (!error && data) setSearchResults(data);
     };
 
-    const timeout = setTimeout(fetchProducts, 300); // debounce
+    const timeout = setTimeout(fetchProducts, 300);
     return () => clearTimeout(timeout);
   }, [searchQuery]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     resetCart();
-    window.location.href = '/'
-
+    window.location.href = '/';
   };
 
   return (
     <>
-      {/* Navbar */}
-      <div className={`fixed top-0 left-0 w-full z-50 transition-transform duration-300 ${showNavbar ? 'translate-y-0' : '-translate-y-full'}`}>
-        {/* Banner */}
-        <div className="w-full bg-[#f3e9dc] text-gray-800 text-sm md:text-base font-medium shadow-sm flex items-center justify-center py-3">
+      {/* Wrapper FIXED */}
+      <div
+        className={`fixed top-0 left-0 w-full z-50 transition-transform duration-300`}
+        style={{
+          transform: showNavbar ? 'translateY(0)' : 'translateY(-120%)',
+        }}
+      >
+        {/* Banner (push effect amb height animada) */}
+        <div
+          className="w-full bg-[#e0cfa6] text-gray-800 text-sm md:text-base font-medium flex items-center justify-center overflow-hidden transition-all duration-500"
+          style={{
+            maxHeight: showBanner ? '80px' : '0px',
+            paddingTop: showBanner ? '12px' : '0px',
+            paddingBottom: showBanner ? '12px' : '0px',
+            opacity: showBanner ? 1 : 0,
+          }}
+        >
           Envío gratis en pedidos superiores a 80€
         </div>
 
-        {/* Nav */}
-        <nav className="w-full bg-white shadow-sm px-4 md:px-8 py-4 relative z-50">
+        {/* Navbar */}
+        <nav className="w-full bg-[#f3e9dc] shadow-sm px-4 md:px-8 py-4 relative z-50">
           <div className="flex items-center justify-between">
-            {/* Logo center */}
+            {/* Logo */}
             <Link href="/" className="text-2xl md:text-3xl font-display font-bold text-rose-700 select-none mx-auto">
               Mōa
             </Link>
 
-            {/* Right icons */}
+            {/* Icons dreta */}
             <div className="flex items-center gap-4 md:gap-6 absolute right-4">
-              {/* Search button */}
+              {/* Search */}
               <button
                 onClick={() => setSearchOpen(prev => !prev)}
                 className="p-2 rounded-full hover:bg-gray-200 transition-all"
               >
-                {searchOpen ? <X className="w-6 h-6 text-gray-700" /> : <Search className="w-6 h-6 text-gray-700" />}
+                {searchOpen ? (
+                  <X className="w-6 h-6 text-gray-700" />
+                ) : (
+                  <Search className="w-6 h-6 text-gray-700" />
+                )}
               </button>
 
               {/* Cart */}
@@ -163,11 +177,13 @@ export default function Navbar() {
 
               {/* User */}
               {user === undefined && <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />}
+
               {user === null && (
                 <Link href="/signin">
                   <User className="w-6 h-6 text-gray-700 hover:text-rose-600 cursor-pointer transition-all" />
                 </Link>
               )}
+
               {user && (
                 <div className="relative" ref={menuRef}>
                   <button
@@ -177,12 +193,21 @@ export default function Navbar() {
                     {user.email ? user.email[0].toUpperCase() : 'U'}
                     <ChevronDown className="w-4 h-4" />
                   </button>
+
                   {menuOpen && (
                     <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded-lg shadow text-sm z-50">
-                      <Link href="/user" className="block px-4 py-2 hover:bg-rose-50 text-gray-700" onClick={() => setMenuOpen(false)}>
+                      <Link
+                        href="/user"
+                        className="block px-4 py-2 hover:bg-rose-50 text-gray-700"
+                        onClick={() => setMenuOpen(false)}
+                      >
                         Área Usuario
                       </Link>
-                      <button onClick={handleLogout} className="block w-full text-left px-4 py-2 hover:bg-rose-50 text-gray-700">
+
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 hover:bg-rose-50 text-gray-700"
+                      >
                         Cerrar Sesión
                       </button>
                     </div>
@@ -192,53 +217,54 @@ export default function Navbar() {
             </div>
           </div>
         </nav>
-
-        {/* Search bar a pantalla completa */}
-        {searchOpen && (
-          <div ref={searchContainerRef} className="fixed top-28 left-0 w-screen bg-white z-50 shadow-md border-t border-gray-200 px-4 md:px-8 py-3">
-            <div className="relative w-full">
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Buscar producto..."
-                className="w-full px-12 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-rose-500"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {/* Icones sobreposats */}
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-700" />
-              <button
-                onClick={() => setSearchOpen(false)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-700"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            {/* Resultats */}
-            {searchResults.length > 0 && (
-              <div className="mt-2 bg-white border border-gray-200 rounded-md shadow overflow-hidden">
-                {searchResults.map((prod) => (
-                  <Link
-                    key={prod.id}
-                    href={`/product/${prod.id}`}
-                    className="block px-4 py-2 hover:bg-rose-50 text-gray-700"
-                    onClick={() => {
-                      setSearchOpen(false);
-                      setSearchQuery('');
-                    }}
-                  >
-                    {prod.name}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
-      {/* Spacer for navbar */}
-      <div className="h-24" />
+
+      {/* Search */}
+      {searchOpen && (
+        <div
+          ref={searchContainerRef}
+          className="fixed top-[72px] left-0 w-screen bg-[#f3e9dc] z-50 shadow-md border-t border-gray-200 px-4 md:px-8 py-3"
+        >
+          <div className="relative w-full">
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Buscar producto..."
+              className="w-full px-12 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-white"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-700" />
+
+            <button
+              onClick={() => setSearchOpen(false)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-700"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          {searchResults.length > 0 && (
+            <div className="mt-2 bg-white border border-gray-200 rounded-md shadow overflow-hidden">
+              {searchResults.map((prod) => (
+                <Link
+                  key={prod.id}
+                  href={`/product/${prod.id}`}
+                  className="block px-4 py-2 hover:bg-rose-50 text-gray-700"
+                  onClick={() => {
+                    setSearchOpen(false);
+                    setSearchQuery('');
+                  }}
+                >
+                  {prod.name}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </>
   );
 }
