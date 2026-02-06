@@ -34,7 +34,7 @@ export default function SigninPage() {
   const handleGoogleSignin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: 'http://localhost:3000/auth/callback' } //'http://localhost:3000/auth/callback' 'https://moa-web-v1.vercel.app/auth/callback'
+      options: { redirectTo: 'https://moa-web-v1.vercel.app/auth/callback' } //'http://localhost:3000/auth/callback' 'https://moa-web-v1.vercel.app/auth/callback'
     })
     if (error) setError(error.message)
     else router.push('/') // redirigeix a home
