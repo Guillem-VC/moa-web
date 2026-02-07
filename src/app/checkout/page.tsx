@@ -35,12 +35,10 @@ function CheckoutForm({
   shipping,
   setShipping,
   clientSecret,
-  setClientSecret,
 }: {
   shipping: Shipping
   setShipping: (s: Shipping) => void
-  clientSecret: string | null
-  setClientSecret: (s: string) => void
+  clientSecret: string
 }) {
   const stripe = useStripe()
   const elements = useElements()
@@ -69,78 +67,11 @@ function CheckoutForm({
 
   const isShippingValid = requiredFields.every((f) => shipping[f].trim() !== '')
 
-  const createPaymentIntent = async () => {
-    const { data } = await supabase.auth.getSession()
-    const session = data.session
-
-    if (!session) {
-      router.push('/signin')
-      return null
-    }
-
-    const res = await fetch('/api/checkout', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        items: items.map((i) => ({
-          product_id: i.product_id,
-          variant_size: i.variant_size,
-          quantity: i.quantity,
-        })),
-        shipping: {
-          name: `${shipping.firstName} ${shipping.lastName}`,
-          email: shipping.email,
-          line1: shipping.address1,
-          line2: shipping.address2,
-          city: shipping.city,
-          postal_code: shipping.postalCode,
-          country: shipping.country,
-          phone: shipping.phone,
-        },
-      }),
-    })
-
-    const json = await res.json()
-
-    if (!res.ok) {
-      alert(json?.error || 'Error iniciant checkout')
-      return null
-    }
-
-    return json.clientSecret as string
-  }
-
   const handlePay = async () => {
-    if (!isShippingValid) {
-      alert('Completa tots els camps obligatoris.')
-      return
-    }
+    if (!stripe || !elements) return
+    if (!isShippingValid) return alert('Completa tots els camps obligatoris.')
 
     setLoading(true)
-
-    // 1) Si encara no tenim clientSecret, el creem ara
-    let secret = clientSecret
-
-    if (!secret) {
-      const createdSecret = await createPaymentIntent()
-      if (!createdSecret) {
-        setLoading(false)
-        return
-      }
-
-      setClientSecret(createdSecret)
-      setLoading(false)
-      return
-    }
-
-    // 2) Ara ja tenim PaymentElement carregat, podem confirmar pagament
-    if (!stripe || !elements) {
-      setLoading(false)
-      return
-    }
 
     const { error } = await stripe.confirmPayment({
       elements,
@@ -296,15 +227,9 @@ function CheckoutForm({
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-gray-900">Payment</h2>
 
-          {!clientSecret ? (
-            <div className="border border-gray-300 rounded-lg p-4 text-sm text-gray-500">
-              Click "Pay now" to load payment methods.
-            </div>
-          ) : (
-            <div className="border border-gray-300 rounded-lg p-4">
-              <PaymentElement />
-            </div>
-          )}
+          <div className="border border-gray-300 rounded-lg p-4">
+            <PaymentElement />
+          </div>
         </div>
 
         <button
@@ -316,11 +241,7 @@ function CheckoutForm({
               : 'bg-black hover:bg-black/90'
           }`}
         >
-          {loading
-            ? 'Processing...'
-            : clientSecret
-            ? `Pay now · €${finalTotal.toFixed(2)}`
-            : `Continue to payment · €${finalTotal.toFixed(2)}`}
+          {loading ? 'Processing...' : `Pay now · €${finalTotal.toFixed(2)}`}
         </button>
       </div>
 
@@ -414,6 +335,31 @@ export default function CheckoutPage() {
         return
       }
 
+      // Create PaymentIntent in backend
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          items: items.map((i) => ({
+            product_id: i.product_id,
+            variant_size: i.variant_size,
+            quantity: i.quantity,
+          })),
+          shipping,
+        }),
+      })
+
+      const json = await res.json()
+
+      if (!res.ok) {
+        alert(json?.error || 'Error iniciant checkout')
+        return
+      }
+
+      setClientSecret(json.clientSecret)
       setLoading(false)
     }
 
@@ -428,11 +374,13 @@ export default function CheckoutPage() {
     )
   }
 
+  if (!clientSecret) return null
+
   return (
     <Elements
       stripe={stripePromise}
       options={{
-        clientSecret: clientSecret ?? undefined,
+        clientSecret,
         appearance: {
           theme: 'stripe',
         },
@@ -444,7 +392,6 @@ export default function CheckoutPage() {
             shipping={shipping}
             setShipping={setShipping}
             clientSecret={clientSecret}
-            setClientSecret={setClientSecret}
           />
         </div>
       </div>
