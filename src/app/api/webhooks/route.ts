@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
-export const runtime = 'nodejs'
+export const runtime = 'nodejs' // Important!
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-12-15.clover',
@@ -34,77 +34,86 @@ export async function POST(req: NextRequest) {
   try {
     console.log('[Webhook] Event received:', event.type)
 
+    // Obtenir order_id depenent del tipus d'event
+    let order_id: string | undefined
+
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session
-      const order_id = session.metadata?.order_id
-
-      if (!order_id) {
-        console.error('[Webhook] Missing order_id in session metadata')
-        return NextResponse.json({ error: 'Missing order_id in metadata' }, { status: 400 })
-      }
-
-      console.log('[Webhook] Processing order_id:', order_id)
-
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .select('id, user_id, status')
-        .eq('id', order_id)
-        .single()
-
-      if (orderError || !order) {
-        console.error('[Webhook] Order not found:', orderError)
-        return NextResponse.json({ error: 'Order not found' }, { status: 404 })
-      }
-
-      console.log('[Webhook] Current order status:', order.status)
-
-      if (order.status !== 'pending') {
-        console.log('[Webhook] Order already processed, skipping.')
-        return NextResponse.json({ received: true })
-      }
-
-      const { data: items, error: itemsError } = await supabase
-        .from('order_items')
-        .select('variant_id, quantity')
-        .eq('order_id', order.id)
-
-      if (itemsError || !items || items.length === 0) {
-        console.error('[Webhook] Order items not found:', itemsError)
-        return NextResponse.json({ error: 'Order items not found', status: 500 })
-      }
-
-      console.log('[Webhook] Order items found:', items.length)
-
-      // ✅ Actualitzar ordre
-      const { error: updateError, data: updatedOrder } = await supabase
-        .from('orders')
-        .update({ paid_at: new Date().toISOString(), status: 'paid' })
-        .eq('id', order.id)
-        .eq('status', 'pending')
-        .select()
-
-      if (updateError) {
-        console.error('[Webhook] Failed to update order:', updateError)
-        return NextResponse.json({ error: 'Failed to update order', status: 500 })
-      }
-
-      console.log('[Webhook] Order marked as paid:', updatedOrder)
-
-      // ✅ Descomptar stock
-      for (const item of items) {
-        const { error: stockError } = await supabase.rpc('decrement_variant_stock', {
-          p_variant_id: item.variant_id,
-          p_quantity: item.quantity,
-        })
-        if (stockError) console.error('[Webhook] Stock update error for variant', item.variant_id, stockError.message)
-      }
-
-      // ✅ Buidar carret
-      const { error: cartError } = await supabase.from('cart_items').delete().eq('user_id', order.user_id)
-      if (cartError) console.error('[Webhook] Error clearing cart:', cartError)
-
-      console.log(`[Webhook] Order ${order.id} processed successfully`)
+      order_id = session.metadata?.order_id
+    } else if (event.type === 'payment_intent.succeeded') {
+      const paymentIntent = event.data.object as Stripe.PaymentIntent
+      order_id = paymentIntent.metadata?.order_id
+    } else {
+      console.log('[Webhook] Event type not handled, skipping.')
+      return NextResponse.json({ received: true })
     }
+
+    if (!order_id) {
+      console.error('[Webhook] Missing order_id in metadata for event:', event.type)
+      return NextResponse.json({ error: 'Missing order_id in metadata' }, { status: 400 })
+    }
+
+    console.log('[Webhook] Processing order_id:', order_id)
+
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select('id, user_id, status')
+      .eq('id', order_id)
+      .single()
+
+    if (orderError || !order) {
+      console.error('[Webhook] Order not found:', orderError)
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+    }
+
+    console.log('[Webhook] Current order status:', order.status)
+
+    if (order.status !== 'pending') {
+      console.log('[Webhook] Order already processed, skipping.')
+      return NextResponse.json({ received: true })
+    }
+
+    const { data: items, error: itemsError } = await supabase
+      .from('order_items')
+      .select('variant_id, quantity')
+      .eq('order_id', order.id)
+
+    if (itemsError || !items || items.length === 0) {
+      console.error('[Webhook] Order items not found:', itemsError)
+      return NextResponse.json({ error: 'Order items not found', status: 500 })
+    }
+
+    console.log('[Webhook] Order items found:', items.length)
+
+    // ✅ Actualitzar ordre
+    const { error: updateError, data: updatedOrder } = await supabase
+      .from('orders')
+      .update({ paid_at: new Date().toISOString(), status: 'paid' })
+      .eq('id', order.id)
+      .eq('status', 'pending')
+      .select()
+
+    if (updateError) {
+      console.error('[Webhook] Failed to update order:', updateError)
+      return NextResponse.json({ error: 'Failed to update order', status: 500 })
+    }
+
+    console.log('[Webhook] Order marked as paid:', updatedOrder)
+
+    // ✅ Descomptar stock
+    for (const item of items) {
+      const { error: stockError } = await supabase.rpc('decrement_variant_stock', {
+        p_variant_id: item.variant_id,
+        p_quantity: item.quantity,
+      })
+      if (stockError) console.error('[Webhook] Stock update error for variant', item.variant_id, stockError.message)
+    }
+
+    // ✅ Buidar carret
+    const { error: cartError } = await supabase.from('cart_items').delete().eq('user_id', order.user_id)
+    if (cartError) console.error('[Webhook] Error clearing cart:', cartError)
+
+    console.log(`[Webhook] Order ${order.id} processed successfully`)
 
     return NextResponse.json({ received: true })
   } catch (err) {
