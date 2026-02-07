@@ -76,7 +76,7 @@ function CheckoutForm({
     const { error } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `${window.location.origin}/success`,
+        return_url: `${window.location.origin}/success?payment_intent={PAYMENT_INTENT_ID}&payment_intent_client_secret={PAYMENT_INTENT_CLIENT_SECRET}&redirect_status=succeeded`,
       },
     })
 
