@@ -6,6 +6,7 @@ import { useCartStore } from '@/store/cartStore'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useUIStore } from '@/store/uiStore'
+import { usePathname } from 'next/navigation'
 
 
 export default function Navbar() {
@@ -33,11 +34,11 @@ export default function Navbar() {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const openCart = useUIStore((state) => state.openCart)
   const loadCart = useCartStore((state) => state.loadCart)
+  const pathname = usePathname()
 
-
-  useEffect(() => {
-    loadCart()
-  }, [loadCart])
+    useEffect(() => {
+      loadCart()
+    }, [pathname])
 
   // --- Load user ---
   useEffect(() => {
