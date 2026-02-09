@@ -1,136 +1,163 @@
-'use client';
+'use client'
 
-import Link from 'next/link';
-import { ShoppingBag, User, ChevronDown, Search, X } from 'lucide-react';
-import { useCartStore } from '@/store/cartStore';
-import { useState, useEffect, useRef } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import Link from 'next/link'
+import { ShoppingBag, User, ChevronDown, Search, X } from 'lucide-react'
+import { useCartStore } from '@/store/cartStore'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { supabase } from '@/lib/supabaseClient'
 
 export default function Navbar() {
-  const [user, setUser] = useState<any | null | undefined>(undefined);
-  const { items, resetCart, loadCart } = useCartStore();
+  const [user, setUser] = useState<any | null | undefined>(undefined)
 
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [showNavbar, setShowNavbar] = useState(true);
-  const [showBanner, setShowBanner] = useState(true);
+  // ✅ Subscripció correcta a Zustand (això és clau)
+  const items = useCartStore((state) => state.items)
+  const resetCart = useCartStore((state) => state.resetCart)
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const totalQuantity = useMemo(() => {
+    return items.reduce((sum, item) => sum + item.quantity, 0)
+  }, [items])
 
-  const lastScrollY = useRef(0);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const searchContainerRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [showNavbar, setShowNavbar] = useState(true)
+  const [showBanner, setShowBanner] = useState(true)
+
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<any[]>([])
+
+  const lastScrollY = useRef(0)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const searchContainerRef = useRef<HTMLDivElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   // --- Load user ---
   useEffect(() => {
     const loadUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return setUser(null);
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session) {
+        setUser(null)
+        return
+      }
 
       try {
         const res = await fetch('/api/auth', {
           headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-        if (!res.ok) return setUser(null);
+        })
 
-        const data = await res.json();
-        setUser(data.user);
+        if (!res.ok) {
+          setUser(null)
+          return
+        }
+
+        const data = await res.json()
+        setUser(data.user)
       } catch {
-        setUser(null);
+        setUser(null)
       }
-    };
+    }
 
-    loadUser();
+    loadUser()
 
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) loadUser();
-      else setUser(null);
-    });
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session) loadUser()
+        else setUser(null)
+      }
+    )
 
-    return () => listener.subscription.unsubscribe();
-  }, []);
+    return () => listener.subscription.unsubscribe()
+  }, [])
 
   // --- Scroll behavior ---
   useEffect(() => {
     const handleScroll = () => {
-      const scrollY = window.scrollY;
+      const scrollY = window.scrollY
 
       // Scroll down -> hide navbar
       if (scrollY > lastScrollY.current && scrollY > 80) {
-        setShowNavbar(false);
-        setSearchOpen(false);
+        setShowNavbar(false)
+        setSearchOpen(false)
       } else {
         // Scroll up -> show navbar
-        setShowNavbar(true);
+        setShowNavbar(true)
       }
 
       // Banner només quan estem a dalt del tot
-      setShowBanner(scrollY < 200);
+      setShowBanner(scrollY < 200)
 
-      lastScrollY.current = scrollY;
+      lastScrollY.current = scrollY
 
-      if (menuOpen) setMenuOpen(false);
-    };
+      if (menuOpen) setMenuOpen(false)
+    }
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [menuOpen]);
-
-  useEffect(() => {
-    loadCart()
-  }, [])
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [menuOpen])
 
   // --- Click outside ---
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setMenuOpen(false);
-      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) setSearchOpen(false);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false)
+      }
+
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setSearchOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // --- Focus search input ---
   useEffect(() => {
-    if (searchOpen) searchInputRef.current?.focus();
-  }, [searchOpen]);
+    if (searchOpen) searchInputRef.current?.focus()
+  }, [searchOpen])
 
   // --- Search products ---
   useEffect(() => {
-    if (!searchQuery) return setSearchResults([]);
+    if (!searchQuery) {
+      setSearchResults([])
+      return
+    }
 
     const fetchProducts = async () => {
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .ilike('name', `%${searchQuery}%`)
-        .limit(10);
+        .limit(10)
 
-      if (!error && data) setSearchResults(data);
-    };
+      if (!error && data) setSearchResults(data)
+    }
 
-    const timeout = setTimeout(fetchProducts, 300);
-    return () => clearTimeout(timeout);
-  }, [searchQuery]);
+    const timeout = setTimeout(fetchProducts, 300)
+    return () => clearTimeout(timeout)
+  }, [searchQuery])
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    resetCart();
-    window.location.href = '/';
-  };
+    await supabase.auth.signOut()
+    resetCart()
+    window.location.href = '/'
+  }
 
   return (
     <>
       {/* Wrapper FIXED */}
       <div
-        className={`fixed top-0 left-0 w-full z-50 transition-transform duration-300`}
+        className="fixed top-0 left-0 w-full z-50 transition-transform duration-300"
         style={{
           transform: showNavbar ? 'translateY(0)' : 'translateY(-120%)',
         }}
       >
-        {/* Banner (push effect amb height animada) */}
+        {/* Banner */}
         <div
           className="w-full bg-[#e0cfa6] text-gray-800 text-sm md:text-base font-medium flex items-center justify-center overflow-hidden transition-all duration-500"
           style={{
@@ -147,7 +174,10 @@ export default function Navbar() {
         <nav className="w-full bg-[#f3e9dc] shadow-sm px-4 md:px-8 py-4 relative z-50">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <Link href="/" className="text-2xl md:text-3xl font-display font-bold text-rose-700 select-none mx-auto">
+            <Link
+              href="/"
+              className="text-2xl md:text-3xl font-display font-bold text-rose-700 select-none mx-auto"
+            >
               Mōa
             </Link>
 
@@ -155,7 +185,7 @@ export default function Navbar() {
             <div className="flex items-center gap-4 md:gap-6 absolute right-4">
               {/* Search */}
               <button
-                onClick={() => setSearchOpen(prev => !prev)}
+                onClick={() => setSearchOpen((prev) => !prev)}
                 className="p-2 rounded-full hover:bg-gray-200 transition-all"
               >
                 {searchOpen ? (
@@ -168,15 +198,18 @@ export default function Navbar() {
               {/* Cart */}
               <Link href="/cart" className="relative">
                 <ShoppingBag className="w-6 h-6 text-gray-700 hover:text-rose-600 transition-all" />
-                {items.length > 0 && (
+
+                {totalQuantity > 0 && (
                   <span className="absolute -top-2 -right-2 bg-rose-600 text-white text-xs px-2 py-0.5 rounded-full flex items-center justify-center font-medium shadow">
-                    {items.reduce((sum, item) => sum + item.quantity, 0)}
+                    {totalQuantity}
                   </span>
                 )}
               </Link>
 
               {/* User */}
-              {user === undefined && <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />}
+              {user === undefined && (
+                <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
+              )}
 
               {user === null && (
                 <Link href="/signin">
@@ -219,7 +252,6 @@ export default function Navbar() {
         </nav>
       </div>
 
-
       {/* Search */}
       {searchOpen && (
         <div
@@ -254,8 +286,8 @@ export default function Navbar() {
                   href={`/product/${prod.id}`}
                   className="block px-4 py-2 hover:bg-rose-50 text-gray-700"
                   onClick={() => {
-                    setSearchOpen(false);
-                    setSearchQuery('');
+                    setSearchOpen(false)
+                    setSearchQuery('')
                   }}
                 >
                   {prod.name}
@@ -266,5 +298,5 @@ export default function Navbar() {
         </div>
       )}
     </>
-  );
+  )
 }
