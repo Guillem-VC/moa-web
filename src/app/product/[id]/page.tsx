@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabaseClient'
 import { useCartStore } from '@/store/cartStore'
 import { Loader2, Heart, Truck, ShieldCheck } from 'lucide-react'
 import { FaCcVisa, FaCcMastercard, FaPaypal, FaApplePay } from "react-icons/fa";
+import { useUIStore } from '@/store/uiStore'
 
 export default function ProductDetail() {
   const { id } = useParams()
@@ -23,6 +24,8 @@ export default function ProductDetail() {
 
   const [selectedImage, setSelectedImage] = useState(0)
   const [showImage, setShowImage] = useState(false)
+
+  const openCart = useUIStore((s) => s.openCart)
 
   /* ─────────────────────────────
       DADES DERIVADES
@@ -152,6 +155,7 @@ export default function ProductDetail() {
       variant_size: selectedSize,
       quantity,
     })
+    openCart()
 
     setAdding(false)
   }

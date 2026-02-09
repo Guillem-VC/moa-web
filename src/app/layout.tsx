@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import CartDrawer from '@/components/CartDrawer'
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="es">
       <body className="flex flex-col min-h-screen">
         <Navbar />
+        <CartDrawer />
         <main className="flex-1 pt-[104px]">{children}</main>
         <Footer />
       </body>

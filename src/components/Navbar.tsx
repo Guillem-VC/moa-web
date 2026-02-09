@@ -5,6 +5,8 @@ import { ShoppingBag, User, ChevronDown, Search, X } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { supabase } from '@/lib/supabaseClient'
+import { useUIStore } from '@/store/uiStore'
+
 
 export default function Navbar() {
   const [user, setUser] = useState<any | null | undefined>(undefined)
@@ -29,6 +31,13 @@ export default function Navbar() {
   const menuRef = useRef<HTMLDivElement>(null)
   const searchContainerRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const openCart = useUIStore((state) => state.openCart)
+  const loadCart = useCartStore((state) => state.loadCart)
+
+
+  useEffect(() => {
+    loadCart()
+  }, [loadCart])
 
   // --- Load user ---
   useEffect(() => {
@@ -196,7 +205,10 @@ export default function Navbar() {
               </button>
 
               {/* Cart */}
-              <Link href="/cart" className="relative">
+              <button
+                onClick={openCart}
+                className="relative"
+              >
                 <ShoppingBag className="w-6 h-6 text-gray-700 hover:text-rose-600 transition-all" />
 
                 {totalQuantity > 0 && (
@@ -204,7 +216,8 @@ export default function Navbar() {
                     {totalQuantity}
                   </span>
                 )}
-              </Link>
+              </button>
+
 
               {/* User */}
               {user === undefined && (
