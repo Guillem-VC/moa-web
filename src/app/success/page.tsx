@@ -1,14 +1,21 @@
 'use client'
 
-import { useRouter} from 'next/navigation'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useCartStore } from '@/store/cartStore' // <-- import correcte del store
 
 // Indica a Next.js que aquesta pàgina sempre és renderitzada al client
 export const dynamic = 'force-dynamic'
 
 export default function SuccessPage() {
   const router = useRouter()
+  const clearCart = useCartStore((state) => state.clearCart) // <-- agafem la funció del store
 
+  // Netejar el carrito quan la pàgina es carrega
+  useEffect(() => {
+    clearCart()
+  }, [clearCart])
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4">
@@ -20,6 +27,7 @@ export default function SuccessPage() {
         <p className="text-gray-600 text-sm">
           Thank you for your purchase. Your payment has been confirmed.
         </p>
+
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
           <Link
             href="/"

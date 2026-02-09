@@ -88,7 +88,8 @@ export async function POST(req: NextRequest) {
           paid_at: new Date().toISOString(),
           total_amount: totalAmount,
           shipping_info: shipping,
-          payment_intent_id: paymentIntentId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         })
         .select()
         .single()
@@ -139,6 +140,19 @@ export async function POST(req: NextRequest) {
           console.error('[Webhook] Error inserting order_item:', insertItemError)
         }
       }
+
+      // Després de crear l'ordre i inserir order_items
+      const { error: deleteError } = await supabase
+        .from('checkout_sessions')
+        .delete()
+        .eq('id', checkoutSession.id)
+
+      if (deleteError) {
+        console.error('[Webhook] Error deleting checkout_session:', deleteError)
+      } else {
+        console.log(`[Webhook] Checkout session ${checkoutSession.id} deleted.`)
+      }
+
 
       // 3) Decrement stock
       for (const item of items) {
