@@ -10,12 +10,12 @@ export const dynamic = 'force-dynamic'
 
 export default function SuccessPage() {
   const router = useRouter()
-  const clearCart = useCartStore((state) => state.clearCart) // <-- agafem la funció del store
+  const resetCart = useCartStore((state) => state.resetCart) // <-- agafem la funció del store
 
   // Netejar el carrito quan la pàgina es carrega
   useEffect(() => {
-    clearCart()
-  }, [clearCart])
+    resetCart()
+  }, [resetCart])
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4">
