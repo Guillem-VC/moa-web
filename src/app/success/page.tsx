@@ -1,21 +1,31 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useCartStore } from '@/store/cartStore' // <-- import correcte del store
+import { useCartStore } from '@/store/cartStore'
 
-// Indica a Next.js que aquesta pàgina sempre és renderitzada al client
 export const dynamic = 'force-dynamic'
 
 export default function SuccessPage() {
-  const router = useRouter()
-  const resetCart = useCartStore((state) => state.resetCart) // <-- agafem la funció del store
+  const resetCart = useCartStore((state) => state.resetCart)
+  const loadCart = useCartStore((state) => state.loadCart)
 
-  // Netejar el carrito quan la pàgina es carrega
   useEffect(() => {
+    // ✅ 1) Buidem immediatament el carrito en frontend (UX instantània)
     resetCart()
-  }, [resetCart])
+
+    // ✅ 2) Recarreguem des de Supabase uns cops (Stripe webhook pot trigar)
+    let tries = 0
+
+    const interval = setInterval(() => {
+      loadCart()
+      tries++
+
+      if (tries >= 3) clearInterval(interval)
+    }, 1500)
+
+    return () => clearInterval(interval)
+  }, [resetCart, loadCart])
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4">
