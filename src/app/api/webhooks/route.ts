@@ -141,19 +141,6 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Després de crear l'ordre i inserir order_items
-      const { error: deleteError } = await supabase
-        .from('checkout_sessions')
-        .delete()
-        .eq('id', checkoutSession.id)
-
-      if (deleteError) {
-        console.error('[Webhook] Error deleting checkout_session:', deleteError)
-      } else {
-        console.log(`[Webhook] Checkout session ${checkoutSession.id} deleted.`)
-      }
-
-
       // 3) Decrement stock
       for (const item of items) {
         const { data: variant } = await supabase

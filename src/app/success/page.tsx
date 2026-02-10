@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useCartStore } from '@/store/cartStore'
 
 export const dynamic = 'force-dynamic'
@@ -10,22 +11,57 @@ export default function SuccessPage() {
   const resetCart = useCartStore((state) => state.resetCart)
   const loadCart = useCartStore((state) => state.loadCart)
 
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  const [valid, setValid] = useState(false)
+
   useEffect(() => {
-    // ✅ 1) Buidem immediatament el carrito en frontend (UX instantània)
-    resetCart()
+    const sessionId = searchParams.get('session_id')
 
-    // ✅ 2) Recarreguem des de Supabase uns cops (Stripe webhook pot trigar)
-    let tries = 0
+    if (!sessionId) {
+      router.replace('/')
+      return
+    }
 
-    const interval = setInterval(() => {
-      loadCart()
-      tries++
+    const validate = async () => {
+      const res = await fetch(`/api/checkout/validate-session?session_id=${sessionId}`)
 
-      if (tries >= 3) clearInterval(interval)
-    }, 1500)
+      if (!res.ok) {
+        router.replace('/')
+        return
+      }
 
-    return () => clearInterval(interval)
-  }, [resetCart, loadCart])
+      setValid(true)
+
+      // UX smooth
+      const timeout = setTimeout(() => {
+        resetCart()
+      }, 1000)
+
+      let tries = 0
+      const interval = setInterval(() => {
+        loadCart()
+        tries++
+        if (tries >= 4) clearInterval(interval)
+      }, 1500)
+
+      return () => {
+        clearTimeout(timeout)
+        clearInterval(interval)
+      }
+    }
+
+    validate()
+  }, [searchParams, router, resetCart, loadCart])
+
+  if (!valid) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-600">
+        Validating payment...
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4">
