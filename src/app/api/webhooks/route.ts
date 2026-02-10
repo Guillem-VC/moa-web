@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
   }
 
   let event: Stripe.Event
+
   try {
     event = stripe.webhooks.constructEvent(
       body,
@@ -56,7 +57,19 @@ export async function POST(req: NextRequest) {
 
       if (sessionError || !checkoutSession) {
         console.error('[Webhook] checkout_session not found:', sessionError)
-        return NextResponse.json({ error: 'checkout_session not found' }, { status: 404 })
+        return NextResponse.json(
+          { error: 'checkout_session not found' },
+          { status: 404 }
+        )
+      }
+
+      // ✅ Protecció extra: si ja té order_id, NO tornem a crear order
+      if (checkoutSession.order_id) {
+        console.log(
+          '[Webhook] checkout_session already linked to order:',
+          checkoutSession.order_id
+        )
+        return NextResponse.json({ received: true })
       }
 
       if (checkoutSession.status === 'paid') {
@@ -65,7 +78,10 @@ export async function POST(req: NextRequest) {
       }
 
       if (checkoutSession.status !== 'pending') {
-        console.log('[Webhook] checkout_session not pending, skipping. Status:', checkoutSession.status)
+        console.log(
+          '[Webhook] checkout_session not pending, skipping. Status:',
+          checkoutSession.status
+        )
         return NextResponse.json({ received: true })
       }
 
@@ -74,95 +90,136 @@ export async function POST(req: NextRequest) {
       const items = checkoutSession.items
       const totalAmount = checkoutSession.total_amount
 
-      if (!items || items.length === 0) {
-        console.error('[Webhook] checkout_session has no items')
-        return NextResponse.json({ error: 'No items in checkout_session' }, { status: 500 })
+      if (!userId) {
+        console.error('[Webhook] checkout_session missing user_id')
+        return NextResponse.json(
+          { error: 'checkout_session missing user_id' },
+          { status: 500 }
+        )
       }
 
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        console.error('[Webhook] checkout_session has no items')
+        return NextResponse.json(
+          { error: 'No items in checkout_session' },
+          { status: 500 }
+        )
+      }
+
+      // =====================================================
       // 1) Crear order
+      // =====================================================
+      const now = new Date().toISOString()
+
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
           user_id: userId,
           status: 'paid',
-          paid_at: new Date().toISOString(),
+          paid_at: now,
           total_amount: totalAmount,
           shipping_info: shipping,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          created_at: now,
+          updated_at: now,
         })
         .select()
         .single()
 
       if (orderError || !order) {
         console.error('[Webhook] Error creating order:', orderError)
-        return NextResponse.json({ error: 'Error creating order' }, { status: 500 })
+        return NextResponse.json(
+          { error: 'Error creating order' },
+          { status: 500 }
+        )
       }
 
       console.log('[Webhook] Order created:', order.id)
 
+      // =====================================================
       // 2) Crear order_items
+      // =====================================================
       for (const item of items) {
-        const { data: variant, error: variantError } = await supabase
-          .from('product_variants')
-          .select('id, price_override')
-          .eq('product_id', item.product_id)
-          .eq('size', item.variant_size)
-          .single()
+        try {
+          const { data: variant, error: variantError } = await supabase
+            .from('product_variants')
+            .select('id, price_override')
+            .eq('product_id', item.product_id)
+            .eq('size', item.variant_size)
+            .single()
 
-        if (variantError || !variant) {
-          console.error('[Webhook] Variant not found:', item.product_id, item.variant_size)
-          continue
-        }
+          if (variantError || !variant) {
+            console.error(
+              '[Webhook] Variant not found:',
+              item.product_id,
+              item.variant_size
+            )
+            continue
+          }
 
-        const { data: product, error: productError } = await supabase
-          .from('products')
-          .select('price')
-          .eq('id', item.product_id)
-          .single()
+          const { data: product, error: productError } = await supabase
+            .from('products')
+            .select('price')
+            .eq('id', item.product_id)
+            .single()
 
-        if (productError || !product) {
-          console.error('[Webhook] Product not found:', item.product_id)
-          continue
-        }
+          if (productError || !product) {
+            console.error('[Webhook] Product not found:', item.product_id)
+            continue
+          }
 
-        const unit_price = variant.price_override ?? product.price ?? 0
+          const unit_price = variant.price_override ?? product.price ?? 0
 
-        const { error: insertItemError } = await supabase.from('order_items').insert({
-          order_id: order.id,
-          product_id: item.product_id,
-          variant_id: variant.id,
-          quantity: item.quantity,
-          unit_price,
-        })
+          const { error: insertItemError } = await supabase
+            .from('order_items')
+            .insert({
+              order_id: order.id,
+              product_id: item.product_id,
+              variant_id: variant.id,
+              quantity: item.quantity,
+              unit_price,
+            })
 
-        if (insertItemError) {
-          console.error('[Webhook] Error inserting order_item:', insertItemError)
+          if (insertItemError) {
+            console.error('[Webhook] Error inserting order_item:', insertItemError)
+          }
+        } catch (err) {
+          console.error('[Webhook] Unexpected error creating order_item:', err)
         }
       }
 
+      // =====================================================
       // 3) Decrement stock
+      // =====================================================
       for (const item of items) {
-        const { data: variant } = await supabase
-          .from('product_variants')
-          .select('id')
-          .eq('product_id', item.product_id)
-          .eq('size', item.variant_size)
-          .single()
+        try {
+          const { data: variant } = await supabase
+            .from('product_variants')
+            .select('id')
+            .eq('product_id', item.product_id)
+            .eq('size', item.variant_size)
+            .single()
 
-        if (!variant?.id) continue
+          if (!variant?.id) continue
 
-        const { error: stockError } = await supabase.rpc('decrement_variant_stock', {
-          p_variant_id: variant.id,
-          p_quantity: item.quantity,
-        })
+          const { error: stockError } = await supabase.rpc(
+            'decrement_variant_stock',
+            {
+              p_variant_id: variant.id,
+              p_quantity: item.quantity,
+            }
+          )
 
-        if (stockError) {
-          console.error('[Webhook] Stock update error:', stockError.message)
+          if (stockError) {
+            console.error('[Webhook] Stock update error:', stockError.message)
+          }
+        } catch (err) {
+          console.error('[Webhook] Unexpected error decrementing stock:', err)
         }
       }
 
+      // =====================================================
       // 4) Clear cart
+      // =====================================================
       const { error: cartError } = await supabase
         .from('cart_items')
         .delete()
@@ -172,21 +229,25 @@ export async function POST(req: NextRequest) {
         console.error('[Webhook] Error clearing cart:', cartError)
       }
 
-      // 5) Mark checkout_session as paid
+      // =====================================================
+      // 5) Mark checkout_session as paid + link order_id
+      // =====================================================
       const { error: updateSessionError } = await supabase
         .from('checkout_sessions')
         .update({
           status: 'paid',
-          paid_at: new Date().toISOString(),
+          paid_at: now,
           order_id: order.id,
         })
         .eq('id', checkoutSession.id)
 
       if (updateSessionError) {
         console.error('[Webhook] Error updating checkout_session:', updateSessionError)
+      } else {
+        console.log(
+          `[Webhook] Checkout session ${checkoutSession.id} marked as paid.`
+        )
       }
-
-      console.log(`[Webhook] Checkout session ${checkoutSession.id} marked as paid.`)
 
       return NextResponse.json({ received: true })
     }
@@ -238,6 +299,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true })
   } catch (err) {
     console.error('[Webhook] Processing error:', err)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
