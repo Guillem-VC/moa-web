@@ -49,6 +49,7 @@ export default function SuccessClient() {
     run()
   }, [searchParams, router, resetCart, loadCart])
 
+  // giff
   if (!valid) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-600">
@@ -77,7 +78,7 @@ export default function SuccessClient() {
           </Link>
 
           <Link
-            href="/orders"
+            href="user/orders"
             className="rounded-lg border border-gray-300 px-6 py-3 text-gray-700 font-semibold hover:bg-gray-50 transition"
           >
             View orders

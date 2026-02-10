@@ -1,3 +1,4 @@
+// File: /app/api/checkout/create-payment-intent/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
@@ -6,7 +7,7 @@ export const runtime = 'nodejs'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // server only
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -19,27 +20,13 @@ type CheckoutItem = {
   quantity: number
 }
 
-type Shipping = {
-  name: string
-  email: string
-  line1: string
-  line2?: string
-  city: string
-  postal_code: string
-  country: string
-  phone: string
-}
-
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { items, shipping } = body as { items: CheckoutItem[]; shipping: Shipping }
+    const { items } = body as { items: CheckoutItem[] }
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: 'No items provided' }, { status: 400 })
-    }
-    if (!shipping) {
-      return NextResponse.json({ error: 'Missing shipping info' }, { status: 400 })
     }
 
     // --------------------------
@@ -47,7 +34,7 @@ export async function POST(req: NextRequest) {
     // --------------------------
     const authHeader = req.headers.get('authorization')
     if (!authHeader) {
-      return NextResponse.json({ error: 'Missing auth header' }, { status: 401 })
+      return NextResponse.json({ error: 'Missing authorization header' }, { status: 401 })
     }
 
     const token = authHeader.replace('Bearer ', '')
@@ -98,7 +85,7 @@ export async function POST(req: NextRequest) {
 
       if (variant.stock < item.quantity) {
         return NextResponse.json(
-          { error: `Stock insuficient per producte ${item.product_id} (${item.variant_size})` },
+          { error: `Stock insuficient for ${item.product_id} (${item.variant_size})` },
           { status: 400 }
         )
       }
@@ -124,29 +111,10 @@ export async function POST(req: NextRequest) {
     const finalAmount = totalAmount + shippingCost
 
     // --------------------------
-    // Actualitzar perfil
-    // --------------------------
-    const { error: profileError } = await supabase.from('profiles').upsert({
-      id: user.id,
-      full_name: shipping.name,
-      email: shipping.email,
-      phone: shipping.phone,
-      address: `${shipping.line1}${shipping.line2 ? ' ' + shipping.line2 : ''}`,
-      city: shipping.city,
-      postal_code: shipping.postal_code,
-      country: shipping.country,
-    })
-
-    if (profileError) {
-      console.error('[Checkout] Error updating profile:', profileError)
-      return NextResponse.json({ error: 'Error updating profile' }, { status: 500 })
-    }
-
-    // --------------------------
     // Crear PaymentIntent
     // --------------------------
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(finalAmount * 100),
+      amount: Math.round(finalAmount * 100), // Stripe sempre en cèntims
       currency: 'eur',
       automatic_payment_methods: { enabled: true },
       metadata: { user_id: user.id },
@@ -167,7 +135,6 @@ export async function POST(req: NextRequest) {
         status: 'pending',
         total_amount: finalAmount,
         currency: 'eur',
-        shipping_info: shipping,
         items: items,
       })
       .select()
@@ -182,6 +149,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
+      totalAmount: finalAmount,
+      shippingCost,
     })
   } catch (err) {
     console.error('[Checkout] Internal error:', err)

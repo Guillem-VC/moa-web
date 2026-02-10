@@ -73,21 +73,31 @@ function CheckoutForm({
 
     setLoading(true)
 
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/success?payment_intent={PAYMENT_INTENT_ID}`,
-      },
-    })
+    try {
+      // Crida al backend per crear el PaymentIntent si encara no està fet
+      const { error } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          // Passa els valors reals del PaymentIntent, no literals
+          return_url: `${window.location.origin}/success`,
+        },
+      })
 
-    if (error) {
-      alert(error.message)
+      if (error) {
+        alert(error.message)
+        setLoading(false)
+        return
+      }
+
+      // ⚠️ NO buidar el cart aquí!
+      // clearCart() l'hauràs de cridar a la /success page, després que el pagament hagi estat confirmat
+
+    } catch (err: any) {
+      console.error(err)
+      alert('Error processant el pagament')
+    } finally {
       setLoading(false)
-      return
     }
-
-    clearCart()
-    setLoading(false)
   }
 
   return (
@@ -398,3 +408,168 @@ export default function CheckoutPage() {
     </Elements>
   )
 }
+
+/*'use client'
+
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useCartStore } from '@/store/cartStore'
+import { supabase } from '@/lib/supabaseClient'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements } from '@stripe/react-stripe-js'
+
+import ShippingForm from '../checkout/ShippingForm/page'       // el form de shipping
+import PaymentForm from './PaymentForm'         // el PaymentElement
+import Summary from './Summary'                 // el resum a la dreta
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+
+type Shipping = {
+  email: string
+  country: string
+  firstName: string
+  lastName: string
+  company: string
+  address1: string
+  address2: string
+  postalCode: string
+  city: string
+  province: string
+  phone: string
+}
+
+export default function CheckoutPage() {
+  const router = useRouter()
+  const { items, clearCart } = useCartStore()
+
+  const [shipping, setShipping] = useState<Shipping>({
+    email: '',
+    country: '',
+    firstName: '',
+    lastName: '',
+    company: '',
+    address1: '',
+    address2: '',
+    postalCode: '',
+    city: '',
+    province: '',
+    phone: '',
+  })
+
+  const [step, setStep] = useState<1 | 2 | 3>(1) // Shipping | Payment | Summary
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const init = async () => {
+      const { data } = await supabase.auth.getSession()
+      const session = data.session
+      if (!session) return router.push('/signin')
+      if (items.length === 0) return router.push('/cart')
+      setLoading(false)
+    }
+    init()
+  }, [router, items])
+
+  const total = useMemo(() => items.reduce((sum, i) => sum + i.price * i.quantity, 0), [items])
+  const shippingCost = total >= 80 ? 0 : 5.99
+  const finalTotal = total + shippingCost
+
+  const requiredFields: (keyof Shipping)[] = [
+    'email', 'country', 'firstName', 'lastName', 'address1',
+    'postalCode', 'city', 'phone'
+  ]
+  const isShippingValid = requiredFields.every(f => shipping[f].trim() !== '')
+
+  // Avançar pas
+  const handleNext = async () => {
+    if (step === 1) {
+      if (!isShippingValid) return alert('Completa tots els camps obligatoris.')
+
+      setLoading(true)
+      try {
+        const { data: sessionData } = await supabase.auth.getSession()
+        const res = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${sessionData?.session?.access_token}`,
+          },
+          body: JSON.stringify({ items, shipping }),
+        })
+        const json = await res.json()
+        if (!res.ok || !json.clientSecret) {
+          alert(json.error || 'Error creant checkout')
+          return
+        }
+        setClientSecret(json.clientSecret)
+        setStep(2) // anem al pas Payment
+      } catch (err) {
+        console.error(err)
+        alert('Error creant checkout')
+      } finally {
+        setLoading(false)
+      }
+    } else if (step === 2) {
+      setStep(3) // anem al resum final
+    }
+  }
+
+  const handleBack = () => setStep((prev) => (prev > 1 ? (prev - 1) as 1 | 2 | 3 : prev))
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading checkout...</div>
+
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Progressbar }
+      <div className="mx-auto max-w-6xl px-4 pt-8">
+        <div className="flex items-center gap-4 mb-12">
+          <div className={`flex-1 h-1 rounded ${step >= 1 ? 'bg-black' : 'bg-gray-200'}`} />
+          <div className={`flex-1 h-1 rounded ${step >= 2 ? 'bg-black' : 'bg-gray-200'}`} />
+          <div className={`flex-1 h-1 rounded ${step >= 3 ? 'bg-black' : 'bg-gray-200'}`} />
+        </div>
+
+        <div className="grid lg:grid-cols-[1fr_1px_420px] gap-12 items-start">
+          <div className="space-y-10">
+            {step === 1 && (
+              <ShippingForm shipping={shipping} setShipping={setShipping} />
+            )}
+
+            {step === 2 && clientSecret && (
+              <Elements stripe={stripePromise} options={{ clientSecret }}>
+                <PaymentForm shipping={shipping} total={finalTotal} />
+              </Elements>
+            )}
+
+            {step === 3 && (
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold text-gray-900">Revisa i confirma</h2>
+                <p>Revisa el resum i fes click a pagar.</p>
+              </div>
+            )}
+
+            <div className="flex gap-4">
+              {step > 1 && (
+                <button
+                  className="px-6 py-3 border rounded"
+                  onClick={handleBack}
+                >Back</button>
+              )}
+              {step < 3 && (
+                <button
+                  className="px-6 py-3 bg-black text-white rounded"
+                  onClick={handleNext}
+                  disabled={loading}
+                >{loading ? 'Loading...' : 'Next'}</button>
+              )}
+            </div>
+          </div>
+
+          <div className="hidden lg:block bg-gray-200 w-px h-full" />
+          <Summary items={items} total={total} shippingCost={shippingCost} finalTotal={finalTotal} />
+        </div>
+      </div>
+    </div>
+  )
+}
+ */
