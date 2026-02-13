@@ -14,6 +14,10 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.text()
   const sig = req.headers.get('stripe-signature')
@@ -36,14 +40,11 @@ export async function POST(req: NextRequest) {
   try {
     console.log('[Webhook] Event received:', event.type)
 
-    // ------------------------
-    // PAYMENT SUCCEEDED
-    // ------------------------
     if (event.type === 'payment_intent.succeeded') {
       const paymentIntent = event.data.object as Stripe.PaymentIntent
       const paymentIntentId = paymentIntent.id
 
-      // Buscar checkout_session
+      // Buscar checkout_session amb payment_intent_id
       const { data: checkoutSession, error: sessionError } = await supabase
         .from('checkout_sessions')
         .select('*')
@@ -55,36 +56,17 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'checkout_session not found' }, { status: 404 })
       }
 
-      // Protecció: si ja té order_id o està pagada, sortim
-      if (checkoutSession.order_id || checkoutSession.status === 'paid') {
-        console.log('[Webhook] checkout_session already processed, skipping.')
-        return NextResponse.json({ received: true })
-      }
-
-      if (checkoutSession.status !== 'pending') {
-        console.log('[Webhook] checkout_session not pending, skipping. Status:', checkoutSession.status)
-        return NextResponse.json({ received: true })
-      }
-
       const userId = checkoutSession.user_id
-      const items = checkoutSession.items
-      const shipping = checkoutSession.shipping_info
+      const items = JSON.parse(checkoutSession.items || '[]')
+      const shipping = JSON.parse(checkoutSession.shipping_info || '{}')
       const totalAmount = checkoutSession.total_amount
 
-      if (!userId || !items?.length) {
-        console.error('[Webhook] Invalid checkout_session data')
-        return NextResponse.json({ error: 'Invalid checkout_session' }, { status: 500 })
-      }
-
-      // ------------------------
-      // Crear ordre
-      // ------------------------
+      // 1) Crear ordre com pending
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
           user_id: userId,
-          status: 'paid',
-          paid_at: now,
+          status: 'pending',
           total_amount: totalAmount,
           shipping_info: shipping,
           created_at: now,
@@ -98,9 +80,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Error creating order' }, { status: 500 })
       }
 
-      // ------------------------
-      // Crear order_items
-      // ------------------------
+      // 2) Crear order_items i decrementar stock
       for (const item of items) {
         try {
           const { data: variant } = await supabase
@@ -125,83 +105,49 @@ export async function POST(req: NextRequest) {
             quantity: item.quantity,
             unit_price: variant.price_override ?? product.price ?? 0,
           })
-        } catch (err) {
-          console.error('[Webhook] Error creating order_item:', err)
-        }
-      }
-
-      // ------------------------
-      // Decrement stock
-      // ------------------------
-      for (const item of items) {
-        try {
-          const { data: variant } = await supabase
-            .from('product_variants')
-            .select('id')
-            .eq('product_id', item.product_id)
-            .eq('size', item.variant_size)
-            .single()
-
-          if (!variant?.id) continue
 
           await supabase.rpc('decrement_variant_stock', {
             p_variant_id: variant.id,
             p_quantity: item.quantity,
           })
         } catch (err) {
-          console.error('[Webhook] Error decrementing stock:', err)
+          console.error('[Webhook] Error processing item:', err)
         }
       }
 
-      // ------------------------
-      // Clear cart
-      // ------------------------
-      await supabase.from('cart_items').delete().eq('user_id', userId)
+      // 3) petit delay
+      await delay(400)
 
-      // ------------------------
-      // Mark checkout_session as paid
-      // ------------------------
-      await supabase.from('checkout_sessions')
+      // 4) Actualitzar ordre a paid
+      await supabase
+        .from('orders')
         .update({
           status: 'paid',
-          paid_at: now,
-          order_id: order.id,
+          paid_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', checkoutSession.id)
+        .eq('id', order.id)
 
-      console.log(`[Webhook] Checkout session ${checkoutSession.id} marked as paid.`)
       return NextResponse.json({ received: true })
     }
 
-    // ------------------------
-    // PAYMENT FAILED
-    // ------------------------
-    if (event.type === 'payment_intent.payment_failed') {
+    if (['payment_intent.payment_failed', 'payment_intent.canceled'].includes(event.type)) {
       const paymentIntent = event.data.object as Stripe.PaymentIntent
-      await supabase.from('checkout_sessions')
-        .update({ status: 'failed', failed_at: now })
+      const status = event.type === 'payment_intent.payment_failed' ? 'failed' : 'canceled'
+
+      await supabase
+        .from('checkout_sessions')
+        .update({
+          status,
+          failed_at: status === 'failed' ? now : null,
+          canceled_at: status === 'canceled' ? now : null,
+        })
         .eq('payment_intent_id', paymentIntent.id)
 
-      console.log(`[Webhook] PaymentIntent ${paymentIntent.id} marked as failed.`)
+      console.log(`[Webhook] PaymentIntent ${paymentIntent.id} marked as ${status}.`)
       return NextResponse.json({ received: true })
     }
 
-    // ------------------------
-    // PAYMENT CANCELED
-    // ------------------------
-    if (event.type === 'payment_intent.canceled') {
-      const paymentIntent = event.data.object as Stripe.PaymentIntent
-      await supabase.from('checkout_sessions')
-        .update({ status: 'canceled', canceled_at: now })
-        .eq('payment_intent_id', paymentIntent.id)
-
-      console.log(`[Webhook] PaymentIntent ${paymentIntent.id} marked as canceled.`)
-      return NextResponse.json({ received: true })
-    }
-
-    // ------------------------
-    // DEFAULT
-    // ------------------------
     console.log('[Webhook] Event type not handled:', event.type)
     return NextResponse.json({ received: true })
   } catch (err) {

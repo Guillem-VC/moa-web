@@ -19,6 +19,8 @@ serve(async (req) => {
 
     const resend = new Resend(Deno.env.get("RESEND_API_KEY")!);
 
+    console.log(order_id)
+
     // 🔹 1️⃣ Obtenir comanda
     const { data: order, error: orderError } = await supabase
       .from("orders")
@@ -30,7 +32,7 @@ serve(async (req) => {
         paid_at
       `)
       .eq("id", order_id)
-      .single();
+      .maybeSingle();
 
     if (orderError || !order) {
       console.error("❌ Error carregant comanda:", orderError);

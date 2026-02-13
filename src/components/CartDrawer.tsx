@@ -87,7 +87,7 @@ export default function CartDrawer() {
           </Link>
 
           <Link
-            href="/checkout"
+            href="/checkout/shipping"
             onClick={closeCart}
             className="block w-full text-center bg-black text-white rounded-lg py-3 font-semibold hover:bg-black/90 transition"
           >

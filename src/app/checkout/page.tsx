@@ -346,7 +346,7 @@ export default function CheckoutPage() {
       }
 
       // Create PaymentIntent in backend
-      const res = await fetch('/api/checkout', {
+      const res = await fetch('/api/checkout/init', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
