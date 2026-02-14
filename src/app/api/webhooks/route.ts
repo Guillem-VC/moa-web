@@ -135,6 +135,21 @@ export async function POST(req: NextRequest) {
         })
         .eq('id', order.id)
 
+
+      // 5) Netejar carret del usuari
+      if (userId) {
+        const { error: cartError } = await supabase
+          .from('cart_items')
+          .delete()
+          .eq('user_id', userId)
+
+        if (cartError) {
+          console.error('[Webhook] Error clearing cart:', cartError)
+        } else {
+          console.log(`[Webhook] Cart cleared for user ${userId}`)
+        }
+      }
+
       return NextResponse.json({ received: true })
     }
 
