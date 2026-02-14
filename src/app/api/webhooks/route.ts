@@ -57,8 +57,15 @@ export async function POST(req: NextRequest) {
       }
 
       const userId = checkoutSession.user_id
-      const items = JSON.parse(checkoutSession.items || '[]')
-      const shipping = JSON.parse(checkoutSession.shipping_info || '{}')
+      const items =
+        typeof checkoutSession.items === 'string'
+          ? JSON.parse(checkoutSession.items)
+          : checkoutSession.items ?? []
+
+      const shipping =
+        typeof checkoutSession.shipping_info === 'string'
+          ? JSON.parse(checkoutSession.shipping_info)
+          : checkoutSession.shipping_info ?? {}
       const totalAmount = checkoutSession.total_amount
 
       // 1) Crear ordre com pending
