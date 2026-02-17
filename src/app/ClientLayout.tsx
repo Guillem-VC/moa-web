@@ -1,3 +1,4 @@
+/*
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
@@ -80,10 +81,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         }`}
       >
         <div className="flex items-center justify-between">
-           {/* Espai buit a l'esquerra */}
+
           <div className="flex items-center gap-6 w-1/3"></div>
 
-          {/* Logo al centre */}
           <Link
             href="/"
             className="absolute left-1/2 transform -translate-x-1/2 text-2xl font-bold text-rose-700"
@@ -145,3 +145,4 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     </UserContext.Provider>
   );
 }
+*/

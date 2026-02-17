@@ -1,8 +1,49 @@
 'use client';
 
+import { useState } from "react";
 import { Instagram, Facebook, Twitter } from "lucide-react";
 
 const Footer = () => {
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterLoading, setNewsletterLoading] = useState(false);
+
+  const handleNewsletterSubmit = async () => {
+    const email = newsletterEmail.trim().toLowerCase();
+
+    if (!email || !email.includes("@")) {
+      alert("Email no válido");
+      return;
+    }
+
+    setNewsletterLoading(true);
+
+    const res = await fetch("/api/newsletter", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    })
+
+    const json = await res.json()
+
+    setNewsletterLoading(false);
+
+    if (!json.ok) {
+      console.error(json)
+      alert("Error saving mail")
+      return
+    }
+
+    if (json.alreadySubscribed) {
+      alert("This email is already subscribed 👌")
+      return
+    }
+
+    alert("Gracias por suscribirte! 🎉");
+    localStorage.setItem("newsletter_popup_closed", "true");
+    setNewsletterEmail(""); // ✅ neteja el camp si s'ha subscrit correctament
+  };
+
+
   return (
     <footer className="bg-black text-gray-100 py-16">
       <div className="container mx-auto px-6">
@@ -22,16 +63,16 @@ const Footer = () => {
             <h4 className="font-semibold mb-4 text-white">Tienda</h4>
             <ul className="space-y-2 text-sm text-gray-300">
               <li>
-                <a href="#" className="hover:text-white transition-colors">Nueva colección</a>
+                <a href="/" className="hover:text-white transition-colors">Nueva colección</a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">Sujetadores</a>
+                <a href="/" className="hover:text-white transition-colors">Sujetadores</a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">Tops deportivos</a>
+                <a href="/" className="hover:text-white transition-colors">Tops deportivos</a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">Calcetines</a>
+                <a href="/" className="hover:text-white transition-colors">Mallas</a>
               </li>
             </ul>
           </div>
@@ -41,16 +82,19 @@ const Footer = () => {
             <h4 className="font-semibold mb-4 text-white">Información</h4>
             <ul className="space-y-2 text-sm text-gray-300">
               <li>
-                <a href="/about" className="hover:text-white transition-colors">Sobre nosotros</a>
+                <a href="/info/legal-advise" className="hover:text-white transition-colors">Aviso Legal y Política de Privacidad</a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">Sostenibilidad</a>
+                <a href="/info/about" className="hover:text-white transition-colors">Sobre nosotros</a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">Envíos y devoluciones</a>
+                <a href="/info/sustainability" className="hover:text-white transition-colors">Sostenibilidad</a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">Contacto</a>
+                <a href="/info/shippings-returns" className="hover:text-white transition-colors">Envíos y devoluciones</a>
+              </li>
+              <li>
+                <a href="/info/contact" className="hover:text-white transition-colors">Contacto</a>
               </li>
             </ul>
           </div>
@@ -59,16 +103,22 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold mb-4 text-white">Newsletter</h4>
             <p className="text-sm text-gray-300 mb-4">
-              Suscríbete y recibe un 10% en tu primera compra
+              Suscríbete y sé el primero en saber de nosotr@s
             </p>
             <div className="flex flex-col sm:flex-row gap-2">
-              <input 
-                type="email" 
+              <input
+                type="email"
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
                 placeholder="Tu email"
                 className="flex-1 px-4 py-2 rounded-2xl bg-gray-800 border border-gray-700 text-white placeholder:text-gray-400 text-sm focus:outline-none focus:border-rose-500 transition-all"
               />
-              <button className="px-6 py-2 bg-rose-600 text-white rounded-2xl text-sm font-medium hover:bg-rose-700 transition-colors">
-                Unirme
+              <button
+                onClick={handleNewsletterSubmit}
+                disabled={newsletterLoading}
+                className="px-6 py-2 bg-rose-600 text-white rounded-2xl text-sm font-medium hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {newsletterLoading ? "Enviando..." : "Unirme"}
               </button>
             </div>
           </div>

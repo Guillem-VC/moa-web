@@ -226,7 +226,7 @@ export default function Navbar() {
               )}
 
               {user === null && (
-                <Link href="/signin">
+                <Link href="/"> {/*Temporal*/}
                   <User className="w-6 h-6 text-gray-700 hover:text-rose-600 cursor-pointer transition-all" />
                 </Link>
               )}

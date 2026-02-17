@@ -257,6 +257,25 @@ export default function CheckoutShippingPage() {
 
   const isShippingValid = requiredFields.every((f) => shipping[f].trim() !== '')
 
+
+    useEffect(() => {
+    const init = async () => {
+      const { data } = await supabase.auth.getSession()
+      const session = data.session
+
+      if (!session) {
+        router.push('/signin')
+        return
+      }
+
+      if (items.length === 0) {
+        router.push('/cart')
+        return
+      }
+    }
+    init()
+  }, [router, items])
+
   useEffect(() => {
     const fetchPostalInfo = async () => {
       const postal = shipping.postalCode.trim()

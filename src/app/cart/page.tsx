@@ -36,19 +36,19 @@ export default function CartPage() {
     } = await supabase.auth.getSession()
 
     if (!session) {
-      router.push('/signin')
+      router.push('/') //temporal
       setCheckoutLoading(false)
       return
     }
 
-    router.push('/checkout')
+    router.push('/') //temporal
   }
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-rose-50 via-white to-rose-100">
         <div className="flex flex-col items-center gap-4">
-          <img src="/gos.gif" className="w-24 opacity-80" />
+          {/*<img src="/gos.gif" className="w-24 opacity-80" />*/}
           <p className="text-gray-600 text-sm">Cargando carrito...</p>
         </div>
       </div>

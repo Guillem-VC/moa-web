@@ -46,9 +46,7 @@ const ProductGrid = () => {
   // --- Fetch types ---
   useEffect(() => {
     const fetchTypes = async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('type')
+      const { data, error } = await supabase.from('products').select('type')
 
       if (error) {
         console.error(error)
@@ -110,10 +108,24 @@ const ProductGrid = () => {
           ))}
         </div>
 
-        {/* Loader */}
+        {/* Skeleton Loader */}
         {loading && (
-          <div className="flex justify-center py-20">
-            <div className="w-10 h-10 rounded-full border-4 border-gray-300 border-t-rose-600 animate-spin" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className="bg-white border border-gray-200 rounded-3xl overflow-hidden shadow-md animate-pulse"
+              >
+                <div className="w-full h-72 bg-gray-200" />
+
+                <div className="p-5 text-center space-y-3">
+                  <div className="h-5 bg-gray-200 rounded w-3/4 mx-auto" />
+                  <div className="h-4 bg-gray-200 rounded w-full mx-auto" />
+                  <div className="h-4 bg-gray-200 rounded w-5/6 mx-auto" />
+                  <div className="h-6 bg-gray-200 rounded w-1/3 mx-auto mt-4" />
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -170,18 +182,6 @@ const ProductGrid = () => {
           <p className="text-center text-gray-500 py-20">
             No hay productos disponibles en esta categoría.
           </p>
-        )}
-
-        {/* Button */}
-        {!loading && (
-          <div className="text-center mt-14">
-            <Link
-              href="/shop"
-              className="inline-flex items-center justify-center px-10 py-3 rounded-full border border-gray-300 text-gray-800 font-medium hover:bg-gray-100 transition-all"
-            >
-              Ver todos los productos
-            </Link>
-          </div>
         )}
       </div>
 

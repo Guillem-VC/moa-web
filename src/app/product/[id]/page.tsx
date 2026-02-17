@@ -7,6 +7,8 @@ import { useCartStore } from '@/store/cartStore'
 import { Loader2, Heart, Truck, ShieldCheck } from 'lucide-react'
 import { FaCcVisa, FaCcMastercard, FaPaypal, FaApplePay } from "react-icons/fa";
 import { useUIStore } from '@/store/uiStore'
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch"
+
 
 export default function ProductDetail() {
   const { id } = useParams()
@@ -26,6 +28,13 @@ export default function ProductDetail() {
   const [showImage, setShowImage] = useState(false)
 
   const openCart = useUIStore((s) => s.openCart)
+
+  //popup
+  const [showNewsletterPopup, setShowNewsletterPopup] = useState(false)
+  const [newsletterEmail, setNewsletterEmail] = useState('')
+  const [newsletterLoading, setNewsletterLoading] = useState(false)
+  const [privacyAccepted, setPrivacyAccepted] = useState(false)
+  const [showPrivacyText, setShowPrivacyText] = useState(false)
 
   /* ─────────────────────────────
       DADES DERIVADES
@@ -142,9 +151,49 @@ export default function ProductDetail() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
+  //popup
+  useEffect(() => {
+    const alreadyClosed = localStorage.getItem('newsletter_popup_closed')
+    if (alreadyClosed === 'true') return
+
+    const timer = setTimeout(() => {
+      setShowNewsletterPopup(true)
+    }, 5000)
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
+    if (!showImage) return
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowImage(false)
+      if (e.key === "ArrowRight") goNextImage()
+      if (e.key === "ArrowLeft") goPrevImage()
+    }
+
+    window.addEventListener("keydown", handleKey)
+    return () => window.removeEventListener("keydown", handleKey)
+  }, [showImage, product])
+
+
+
   /* ─────────────────────────────
       ACTIONS
   ───────────────────────────── */
+
+  const goNextImage = () => {
+    setSelectedImage((prev) =>
+      prev + 1 >= product.image_urls.length ? 0 : prev + 1
+    )
+  }
+
+  const goPrevImage = () => {
+    setSelectedImage((prev) =>
+      prev - 1 < 0 ? product.image_urls.length - 1 : prev - 1
+    )
+  }
+
 
   const handleAddToCart = async () => {
     if (!product || !selectedSize || isOutOfStock) return
@@ -174,6 +223,57 @@ export default function ProductDetail() {
     alert('Te avisaremos cuando vuelva a haver stock 👌')
   }
 
+  //function to close popup
+  const closeNewsletterPopup = () => {
+    localStorage.setItem('newsletter_popup_closed', 'true')
+    setShowNewsletterPopup(false)
+  }
+
+  //function to send email to supabase
+  const handleNewsletterSubmit = async () => {
+    const email = newsletterEmail.toLowerCase().trim()
+
+    if (!email || !email.includes("@")) {
+      alert("Email no válido")
+      return
+    }
+
+    if (!privacyAccepted) {
+      alert("Debes aceptar la política de privacidad")
+      return
+    }
+
+    setNewsletterLoading(true)
+
+    const res = await fetch("/api/newsletter", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    })
+
+    const json = await res.json()
+
+    setNewsletterLoading(false)
+
+    if (!json.ok) {
+      console.error(json)
+      alert("Error saving mail")
+      return
+    }
+
+    if (json.alreadySubscribed) {
+      alert("This email is already subscribed 👌")
+      closeNewsletterPopup()
+      return
+    }
+
+    alert("Gracias por suscribirte 🎉")
+    closeNewsletterPopup()
+  }
+
+
+
+
   /* ─────────────────────────────
       LOADING
   ───────────────────────────── */
@@ -182,7 +282,7 @@ export default function ProductDetail() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
         <div className="flex flex-col items-center gap-3">
-          <img src="/gos.gif" className="w-20 opacity-80" />
+          {/*<img src="/gos.gif" className="w-20 opacity-80" />*/}
           <p className="text-gray-500 text-sm">Cargando producto...</p>
         </div>
       </div>
@@ -199,20 +299,210 @@ export default function ProductDetail() {
 
   return (
     <div className="min-h-screen bg-white">
+      {/*POPUP*/}
+      {showNewsletterPopup && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative border border-black/10">
+            
+            <button
+              onClick={closeNewsletterPopup}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl"
+            >
+              ✕
+            </button>
+
+            <h2 className="text-2xl font-semibold text-gray-900">
+              ¿Te gusta este top? 😊
+            </h2>
+
+            <p className="text-sm text-gray-600 mt-2">
+              Estamos haciendo una prueba rápida para saber si este producto tendría interés.
+              Si te gusta y te gustaría saber cuándo estará disponible, déjanos tu correo y te avisaremos en cuanto haya novedades.
+              ¡Gracias por ayudarnos! 💛
+            </p>
+
+            <div className="mt-6 space-y-3">
+              <input
+                type="email"
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
+                placeholder="Tu correo electrónico"
+                className="w-full border border-black/10 rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
+              />
+
+              {/* CHECKBOX PRIVACIDAD */}
+              <div className="flex items-start gap-3 text-sm text-gray-600 mt-2">
+                <input
+                  type="checkbox"
+                  checked={privacyAccepted}
+                  onChange={(e) => setPrivacyAccepted(e.target.checked)}
+                  className="mt-1"
+                />
+
+                <div className="leading-snug">
+                  <span>
+                    Acepto recibir información y doy mi consentimiento según el{" "}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPrivacyText(!showPrivacyText)}
+                    className="text-rose-600 font-medium hover:underline"
+                  >
+                    Aviso Legal y Política de Privacidad
+                  </button>
+                </div>
+              </div>
+
+              {/* TEXTO PRIVACIDAD DESPLEGABLE */}
+              {showPrivacyText && (
+                <div className="bg-gray-50 border border-black/10 rounded-2xl p-4 text-xs text-gray-700 max-h-52 overflow-y-auto">
+                  <p className="font-semibold mb-2">Aviso Legal y Política de Privacidad de MOA</p>
+
+                  <p className="font-semibold mt-2">1. Responsable del tratamiento</p>
+                  <p>
+                    El responsable de los datos es Cynthia Fernandez Masip (MOA). Los datos personales recopilados,
+                    como tu correo electrónico, se usarán únicamente para fines relacionados con nuestra actividad:
+                    envío de información, promociones y novedades.
+                  </p>
+
+                  <p className="font-semibold mt-2">2. Datos que recogemos</p>
+                  <p>
+                    Recogemos únicamente los datos que tú nos facilitas voluntariamente:
+                    <br />- Correo electrónico
+                    <br />- Nombre (opcional)
+                  </p>
+
+                  <p className="font-semibold mt-2">3. Finalidad del tratamiento</p>
+                  <p>
+                    Tus datos se utilizarán para:
+                    <br />- Enviar boletines informativos y comunicaciones sobre nuestros productos y servicios.
+                    <br />- Informarte de novedades y promociones.
+                    <br />- Gestionar la suscripción y garantizar la seguridad de nuestros servicios.
+                  </p>
+
+                  <p className="font-semibold mt-2">4. Base legal</p>
+                  <p>
+                    El tratamiento de tus datos se realiza con tu consentimiento explícito al suscribirte en nuestra web.
+                  </p>
+
+                  <p className="font-semibold mt-2">5. Conservación de los datos</p>
+                  <p>
+                    Tus datos se conservarán mientras mantengas tu suscripción o hasta que solicites su eliminación.
+                  </p>
+
+                  <p className="font-semibold mt-2">6. Derechos de los usuarios</p>
+                  <p>
+                    Tienes derecho a:
+                    <br />- Acceder a tus datos.
+                    <br />- Rectificarlos si son incorrectos.
+                    <br />- Solicitar su supresión (“derecho al olvido”).
+                    <br />- Limitar u oponerte al tratamiento.
+                    <br />- Solicitar la portabilidad de tus datos.
+                    <br />
+                    <br />
+                    Para ejercer tus derechos, puedes escribir a:{" "}
+                    <span className="font-medium">contact.moasport@gmail.com</span>
+                  </p>
+
+                  <p className="font-semibold mt-2">7. Seguridad</p>
+                  <p>
+                    Adoptamos las medidas técnicas y organizativas necesarias para proteger tus datos frente a accesos
+                    no autorizados, pérdidas o alteraciones.
+                  </p>
+
+                  <p className="font-semibold mt-2">8. Cookies</p>
+                  <p>
+                    Nuestra web puede usar cookies para mejorar tu experiencia y analizar estadísticas de visitas.
+                    Consulta nuestra política de cookies para más detalles.
+                  </p>
+                </div>
+              )}
+
+              <button
+                onClick={handleNewsletterSubmit}
+                disabled={newsletterLoading || !privacyAccepted}
+                className="w-full bg-rose-600 text-white py-3 rounded-full font-semibold hover:bg-rose-700 transition disabled:opacity-50"
+              >
+                {newsletterLoading ? 'Enviando...' : 'Suscribirme'}
+              </button>
+
+              <button
+                onClick={closeNewsletterPopup}
+                className="w-full text-sm text-gray-500 hover:text-gray-700"
+              >
+                No, gracias
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL IMATGE */}
       {showImage && (
         <div
           onClick={() => setShowImage(false)}
-          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-6 cursor-zoom-out"
+          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
         >
-          <img
-            src={product.image_urls[selectedImage]}
-            alt={product.name}
-            className="max-w-full max-h-[85vh] rounded-3xl shadow-2xl object-contain"
-          />
+          {/* CLOSE */}
+          <button
+            onClick={() => setShowImage(false)}
+            className="absolute top-6 right-6 text-white text-3xl z-50"
+          >
+            ✕
+          </button>
+
+          {/* LEFT ARROW */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              goPrevImage()
+            }}
+            className="absolute left-4 md:left-8 text-white text-5xl z-50 opacity-80 hover:opacity-100 transition"
+          >
+            ‹
+          </button>
+
+          {/* RIGHT ARROW */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              goNextImage()
+            }}
+            className="absolute right-4 md:right-8 text-white text-5xl z-50 opacity-80 hover:opacity-100 transition"
+          >
+            ›
+          </button>
+
+          {/* ZOOM WRAPPER */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-full max-h-full"
+          >
+            <TransformWrapper
+              key={selectedImage}
+              initialScale={1}
+              minScale={1}
+              maxScale={4}
+              doubleClick={{ mode: "zoomIn" }}
+              wheel={{ step: 0.2 }}
+              pinch={{ step: 5 }}
+              panning={{ velocityDisabled: true }}
+            >
+              <TransformComponent>
+                <img
+                  src={product.image_urls[selectedImage]}
+                  alt={product.name}
+                  className="max-h-[85vh] max-w-full rounded-3xl object-contain select-none"
+                  draggable={false}
+                />
+              </TransformComponent>
+            </TransformWrapper>
+          </div>
         </div>
       )}
+
+
 
       {/* PAGE */}
       <section className="py-14 bg-[#f3e9dc] border-b border-black/10">
@@ -403,7 +693,7 @@ export default function ProductDetail() {
                     Añadiendo...
                   </>
                 ) : (
-                  'Afegir al carrito'
+                  'Añadir al carrito'
                 )}
               </button>
 
@@ -433,7 +723,7 @@ export default function ProductDetail() {
 
               {/* SMALL NOTE */}
               <p className="mt-6 text-xs text-gray-500 leading-relaxed">
-                Els colors poden variar lleugerament segons la pantalla. Stock actualitzat en temps real.
+                Los colores pueden variar ligeramente segun la pantalla. Stock actualitzado en tiempo real.
               </p>
             </div>
           </div>

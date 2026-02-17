@@ -14,7 +14,7 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
 
     if (!email) {
-      setMessage("Introdueix el teu correu electrònic.");
+      setMessage("Introduce tu correo electrónico.");
       return;
     }
 
@@ -27,7 +27,7 @@ export default function ForgotPasswordPage() {
     if (error) {
       setMessage("❌ " + error.message);
     } else {
-      setMessage("✅ Revisa el teu correu per restablir la contrasenya.");
+      setMessage("✅ Revisa tu correo para restablecer la contraseña.");
       // 👇 Espera un moment i redirigeix a la home
       setTimeout(() => router.push("/"), 2000);
     }
@@ -47,11 +47,11 @@ export default function ForgotPasswordPage() {
       {/* Formulari */}
       <div className="relative z-10 w-full max-w-md p-8 bg-white/80 backdrop-blur-md shadow-lg rounded-2xl">
         <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">
-          Has oblidat la contrasenya?
+          ¿Has olvidado la contraseña?
         </h1>
 
         <p className="text-center text-gray-600 mb-4 text-sm">
-          Introdueix el teu correu electrònic i t’enviarem un enllaç per restablir-la.
+          Introduce tu correo electrónico y te enviaremos un enlace para restablecerla.
         </p>
 
         {message && (
@@ -67,7 +67,7 @@ export default function ForgotPasswordPage() {
         <form onSubmit={handleForgotPassword}>
           <input
             type="email"
-            placeholder="Correu electrònic"
+            placeholder="Correo electrónico"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full p-2 mb-4 border border-gray-300 rounded placeholder-gray-500 text-black focus:outline-none focus:ring-2 focus:ring-rose-500"
@@ -79,14 +79,14 @@ export default function ForgotPasswordPage() {
             disabled={loading}
             className="w-full bg-rose-600 text-white p-2 rounded hover:bg-rose-700 transition font-medium"
           >
-            {loading ? "Enviant..." : "Enviar correu de restabliment"}
+            {loading ? "Enviando..." : "Enviar correo de restablecimiento"}
           </button>
         </form>
 
         <p className="mt-6 text-center text-gray-700 text-sm">
-          Torna a{" "}
+          Vuelve a{" "}
           <a href="/signin" className="text-rose-600 hover:underline font-medium">
-            Inicia sessió
+            Inicia sesión
           </a>
         </p>
       </div>

@@ -14,7 +14,7 @@ const features = [
   {
     icon: Shield,
     title: "Pago Seguro",
-    description: "Transacciones protegidas",
+    description: "Transacciones protegidas por Stripe",
   },
   {
     icon: Leaf,

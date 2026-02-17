@@ -87,6 +87,19 @@ export default function CheckoutPaymentClient() {
   const [clientSecret, setClientSecret] = useState<string | null>(null)
 
   useEffect(() => {
+    const init = async () => {
+      const { data } = await supabase.auth.getSession()
+      const session = data.session
+
+      if (!session) {
+        router.push('/checkout/shipping')
+        return
+      }
+    }
+    init()
+  }, [router, items])
+  
+  useEffect(() => {
     const sessionIdParam = searchParams.get('sessionId')
     if (!sessionIdParam) return router.push('/')
 
