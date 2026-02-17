@@ -442,7 +442,7 @@ export default function ProductDetail() {
       {showImage && (
         <div
           onClick={() => setShowImage(false)}
-          className="fixed inset-0 bg-black z-50 flex items-center justify-center"
+          className="fixed inset-0 bg-black z-50 flex items-center justify-center overflow-hidden"
         >
           {/* CLOSE */}
           <button
@@ -452,60 +452,39 @@ export default function ProductDetail() {
             ✕
           </button>
 
-          {/* LEFT ARROW */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              goPrevImage()
-            }}
-            className="absolute left-3 md:left-8 text-white text-5xl z-50 opacity-80 hover:opacity-100 transition"
-          >
-            ‹
-          </button>
+          {/* LEFT/RIGHT */}
+          <button onClick={(e) => { e.stopPropagation(); goPrevImage(); }}
+            className="absolute left-3 text-white text-5xl z-50 opacity-80 hover:opacity-100 transition">‹</button>
+          <button onClick={(e) => { e.stopPropagation(); goNextImage(); }}
+            className="absolute right-3 text-white text-5xl z-50 opacity-80 hover:opacity-100 transition">›</button>
 
-          {/* RIGHT ARROW */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              goNextImage()
-            }}
-            className="absolute right-3 md:right-8 text-white text-5xl z-50 opacity-80 hover:opacity-100 transition"
+          {/* TRANSFORM */}
+          <TransformWrapper
+            key={selectedImage}
+            initialScale={1}
+            minScale={1}
+            maxScale={10}         // Permet zoomar molt més
+            centerOnInit
+            doubleClick={{ mode: "zoomIn" }}
+            wheel={{ step: 0.2 }}
+            pinch={{ step: 0.5 }}
+            panning={{ velocityDisabled: true }}
           >
-            ›
-          </button>
-
-          {/* ZOOM WRAPPER FULLSCREEN */}
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-screen h-screen flex items-center justify-center"
-          >
-            <TransformWrapper
-              key={selectedImage}
-              initialScale={1}
-              minScale={1}
-              maxScale={4}
-              centerOnInit
-              centerZoomedOut
-              doubleClick={{ mode: "zoomIn" }}
-              wheel={{ step: 0.2 }}
-              pinch={{ step: 5 }}
-              panning={{ velocityDisabled: true }}
+            <TransformComponent
+              wrapperClass="w-screen h-screen flex items-center justify-center"
+              contentClass="w-auto h-auto flex items-center justify-center"
             >
-              <TransformComponent
-                wrapperClass="w-screen h-screen"
-                contentClass="w-screen h-screen flex items-center justify-center"
-              >
-                <img
-                  src={product.image_urls[selectedImage]}
-                  alt={product.name}
-                  className="max-w-full max-h-full object-contain select-none"
-                  draggable={false}
-                />
-              </TransformComponent>
-            </TransformWrapper>
-          </div>
+              <img
+                src={product.image_urls[selectedImage]}
+                alt={product.name}
+                className="object-contain select-none max-w-none max-h-none"
+                draggable={false}
+              />
+            </TransformComponent>
+          </TransformWrapper>
         </div>
       )}
+
 
       {/* PAGE */}
       <section className="py-14 bg-[#f3e9dc] border-b border-black/10">
