@@ -452,18 +452,26 @@ export default function ProductDetail() {
             ✕
           </button>
 
-          {/* LEFT/RIGHT */}
-          <button onClick={(e) => { e.stopPropagation(); goPrevImage(); }}
-            className="absolute left-3 text-white text-5xl z-50 opacity-80 hover:opacity-100 transition">‹</button>
-          <button onClick={(e) => { e.stopPropagation(); goNextImage(); }}
-            className="absolute right-3 text-white text-5xl z-50 opacity-80 hover:opacity-100 transition">›</button>
+          {/* LEFT / RIGHT */}
+          <button
+            onClick={(e) => { e.stopPropagation(); goPrevImage(); }}
+            className="absolute left-3 text-white text-5xl z-50 opacity-80 hover:opacity-100 transition"
+          >
+            ‹
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); goNextImage(); }}
+            className="absolute right-3 text-white text-5xl z-50 opacity-80 hover:opacity-100 transition"
+          >
+            ›
+          </button>
 
-          {/* TRANSFORM */}
+          {/* TRANSFORM FULLSCREEN */}
           <TransformWrapper
             key={selectedImage}
-            initialScale={1}
-            minScale={1}
-            maxScale={10}         // Permet zoomar molt més
+            initialScale={1}     // escala inicial natural (ja plena pantalla)
+            minScale={1}         // no permet fer zoom out per quedar més petit
+            maxScale={5}         // permet zoom molt gran
             centerOnInit
             doubleClick={{ mode: "zoomIn" }}
             wheel={{ step: 0.2 }}
@@ -471,17 +479,18 @@ export default function ProductDetail() {
             panning={{ velocityDisabled: true }}
           >
             <TransformComponent
-              wrapperClass="w-screen h-screen flex items-center justify-center"
-              contentClass="w-auto h-auto flex items-center justify-center"
+              wrapperClass="fixed inset-0 flex items-center justify-center overflow-visible z-50"
+              contentClass="flex items-center justify-center"
             >
               <img
                 src={product.image_urls[selectedImage]}
                 alt={product.name}
-                className="object-contain select-none max-w-none max-h-none"
+                className="w-screen h-screen object-contain select-none"
                 draggable={false}
               />
             </TransformComponent>
           </TransformWrapper>
+
         </div>
       )}
 
