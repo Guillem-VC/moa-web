@@ -158,7 +158,7 @@ export default function ProductDetail() {
 
     const timer = setTimeout(() => {
       setShowNewsletterPopup(true)
-    }, 5000)
+    }, 10000)
 
     return () => clearTimeout(timer)
   }, [])
@@ -442,12 +442,12 @@ export default function ProductDetail() {
       {showImage && (
         <div
           onClick={() => setShowImage(false)}
-          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black z-50 flex items-center justify-center"
         >
           {/* CLOSE */}
           <button
             onClick={() => setShowImage(false)}
-            className="absolute top-6 right-6 text-white text-3xl z-50"
+            className="absolute top-5 right-5 text-white text-3xl z-50"
           >
             ✕
           </button>
@@ -458,7 +458,7 @@ export default function ProductDetail() {
               e.stopPropagation()
               goPrevImage()
             }}
-            className="absolute left-4 md:left-8 text-white text-5xl z-50 opacity-80 hover:opacity-100 transition"
+            className="absolute left-3 md:left-8 text-white text-5xl z-50 opacity-80 hover:opacity-100 transition"
           >
             ‹
           </button>
@@ -469,31 +469,36 @@ export default function ProductDetail() {
               e.stopPropagation()
               goNextImage()
             }}
-            className="absolute right-4 md:right-8 text-white text-5xl z-50 opacity-80 hover:opacity-100 transition"
+            className="absolute right-3 md:right-8 text-white text-5xl z-50 opacity-80 hover:opacity-100 transition"
           >
             ›
           </button>
 
-          {/* ZOOM WRAPPER */}
+          {/* ZOOM WRAPPER FULLSCREEN */}
           <div
             onClick={(e) => e.stopPropagation()}
-            className="max-w-full max-h-full"
+            className="w-screen h-screen flex items-center justify-center"
           >
             <TransformWrapper
               key={selectedImage}
               initialScale={1}
               minScale={1}
               maxScale={4}
+              centerOnInit
+              centerZoomedOut
               doubleClick={{ mode: "zoomIn" }}
               wheel={{ step: 0.2 }}
               pinch={{ step: 5 }}
               panning={{ velocityDisabled: true }}
             >
-              <TransformComponent>
+              <TransformComponent
+                wrapperClass="w-screen h-screen"
+                contentClass="w-screen h-screen flex items-center justify-center"
+              >
                 <img
                   src={product.image_urls[selectedImage]}
                   alt={product.name}
-                  className="max-h-[85vh] max-w-full rounded-3xl object-contain select-none"
+                  className="max-w-full max-h-full object-contain select-none"
                   draggable={false}
                 />
               </TransformComponent>
@@ -501,8 +506,6 @@ export default function ProductDetail() {
           </div>
         </div>
       )}
-
-
 
       {/* PAGE */}
       <section className="py-14 bg-[#f3e9dc] border-b border-black/10">
