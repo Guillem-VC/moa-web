@@ -158,7 +158,7 @@ export default function ProductDetail() {
 
     const timer = setTimeout(() => {
       setShowNewsletterPopup(true)
-    }, 10000)
+    }, 20000)
 
     return () => clearTimeout(timer)
   }, [])
@@ -455,13 +455,13 @@ export default function ProductDetail() {
           {/* LEFT / RIGHT */}
           <button
             onClick={(e) => { e.stopPropagation(); goPrevImage(); }}
-            className="absolute left-3 text-white text-5xl z-50 opacity-80 hover:opacity-100 transition"
+            className="absolute left-3 text-white text-5xl z-[999] opacity-80 hover:opacity-100 transition pointer-events-auto"
           >
             ‹
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); goNextImage(); }}
-            className="absolute right-3 text-white text-5xl z-50 opacity-80 hover:opacity-100 transition"
+            className="absolute right-3 text-white text-5xl z-50 opacity-80 hover:opacity-100 transition pointer-events-auto"
           >
             ›
           </button>
@@ -479,13 +479,14 @@ export default function ProductDetail() {
             panning={{ velocityDisabled: true }}
           >
             <TransformComponent
-              wrapperClass="fixed inset-0 flex items-center justify-center overflow-visible z-50"
-              contentClass="flex items-center justify-center"
+              wrapperClass="fixed inset-0 flex items-center justify-center overflow-hidden z-40 pointer-events-none"
+              contentClass="flex items-center justify-center pointer-events-auto"
             >
+
               <img
                 src={product.image_urls[selectedImage]}
                 alt={product.name}
-                className="w-screen h-screen object-contain select-none"
+                className="w-screen h-screen object-contain select-none pointer-events-auto"
                 draggable={false}
               />
             </TransformComponent>
@@ -499,9 +500,11 @@ export default function ProductDetail() {
       <section className="py-14 bg-[#f3e9dc] border-b border-black/10">
         <div className="container mx-auto px-4">
           <div className="text-center">
+            {/*}
             <p className="text-xs uppercase tracking-widest text-gray-500 mb-3">
-              {product.type || 'Producte'}
+              {product.type || 'Producto'}
             </p>
+            */}
 
             <h1 className="font-display text-4xl md:text-5xl font-semibold text-gray-900">
               {product.name}
@@ -720,6 +723,22 @@ export default function ProductDetail() {
           </div>
         </div>
       </section>
+      {/* FULL DESCRIPTION */}
+      {product.full_description && (
+        <section className="py-20 bg-white border-t border-black/10">
+          <div className="container mx-auto px-4">
+            <div className="max-w-3xl mx-auto text-center">
+              <h2 className="text-2xl md:text-3xl font-semibold text-gray-900 mb-6">
+                Detalles del producto
+              </h2>
+
+              <p className="text-gray-700 leading-relaxed whitespace-pre-line text-base md:text-lg">
+                {product.full_description}
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   )
 }
