@@ -7,6 +7,7 @@ import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer'
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { Analytics } from '@vercel/analytics/react'
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<any | null | undefined>(undefined);
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <CartDrawer />
         <main className="flex-1 pt-[104px] bg-[#f5f1e7]">{children}</main>
         <Footer />
+        <Analytics />
       </body>
     </html>
   );
