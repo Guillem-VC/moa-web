@@ -158,7 +158,7 @@ export default function ProductDetail() {
 
     const timer = setTimeout(() => {
       setShowNewsletterPopup(true)
-    }, 10000)
+    }, 5000)
 
     return () => clearTimeout(timer)
   }, [])
