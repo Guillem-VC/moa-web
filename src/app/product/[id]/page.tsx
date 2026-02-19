@@ -225,7 +225,7 @@ export default function ProductDetail() {
 
   //function to close popup
   const closeNewsletterPopup = () => {
-    localStorage.setItem('newsletter_popup_closed', 'true')
+    //localStorage.setItem('newsletter_popup_closed', 'true')
     setShowNewsletterPopup(false)
   }
 
@@ -263,11 +263,13 @@ export default function ProductDetail() {
 
     if (json.alreadySubscribed) {
       alert("This email is already subscribed 👌")
+      localStorage.setItem('newsletter_popup_closed', 'true')
       closeNewsletterPopup()
       return
     }
 
     alert("Gracias por suscribirte 🎉")
+    localStorage.setItem('newsletter_popup_closed', 'true')
     closeNewsletterPopup()
   }
 
