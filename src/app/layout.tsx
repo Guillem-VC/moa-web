@@ -32,7 +32,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="flex flex-col min-h-screen">
         <Navbar />
         <CartDrawer />
-        <main className="flex-1 pt-[104px]">{children}</main>
+        <main className="flex-1 pt-[104px] bg-[#f5f1e7]">{children}</main>
         <Footer />
       </body>
     </html>
