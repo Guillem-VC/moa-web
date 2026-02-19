@@ -223,8 +223,13 @@ export default function ProductDetail() {
     alert('Te avisaremos cuando vuelva a haver stock 👌')
   }
 
-  //function to close popup
-  const closeNewsletterPopup = () => {
+  //function to close popup without true
+  const closeNewsletterPopupTrue = () => {
+    localStorage.setItem('newsletter_popup_closed', 'true')
+    setShowNewsletterPopup(false)
+  }
+
+  const closeNewsletterPopupFalse = () => {
     //localStorage.setItem('newsletter_popup_closed', 'true')
     setShowNewsletterPopup(false)
   }
@@ -258,19 +263,20 @@ export default function ProductDetail() {
     if (!json.ok) {
       console.error(json)
       alert("Error saving mail")
+      closeNewsletterPopupFalse()
       return
     }
 
     if (json.alreadySubscribed) {
       alert("This email is already subscribed 👌")
       localStorage.setItem('newsletter_popup_closed', 'true')
-      closeNewsletterPopup()
+      closeNewsletterPopupTrue()
       return
     }
 
     alert("Gracias por suscribirte 🎉")
     localStorage.setItem('newsletter_popup_closed', 'true')
-    closeNewsletterPopup()
+    closeNewsletterPopupTrue()
   }
 
 
@@ -307,7 +313,7 @@ export default function ProductDetail() {
           <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative border border-black/10">
             
             <button
-              onClick={closeNewsletterPopup}
+              onClick={closeNewsletterPopupFalse}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl"
             >
               ✕
@@ -430,7 +436,7 @@ export default function ProductDetail() {
               </button>
 
               <button
-                onClick={closeNewsletterPopup}
+                onClick={closeNewsletterPopupTrue}
                 className="w-full text-sm text-gray-500 hover:text-gray-700"
               >
                 No, gracias
