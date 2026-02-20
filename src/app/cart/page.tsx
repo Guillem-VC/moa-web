@@ -56,7 +56,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-rose-100 text-gray-900">
+    <div className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-rose-100 text-gray-900 pt-32 pb-20">
       <div className="max-w-6xl mx-auto px-6 py-14">
 
         {/* HEADER */}

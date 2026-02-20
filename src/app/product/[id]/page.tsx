@@ -505,7 +505,7 @@ export default function ProductDetail() {
 
 
       {/* PAGE */}
-      <section className="py-14 bg-[#f3e9dc] border-b border-black/10">
+      <section className="pt-32 pb-16 bg-[#f3e9dc] border-b border-black/10">
         <div className="container mx-auto px-4">
           <div className="text-center">
             {/*}
