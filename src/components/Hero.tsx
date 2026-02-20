@@ -94,7 +94,7 @@ const Hero = () => {
           </p>
 
           <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-            <Link href="/shop">
+            <Link href="/">
               <Button
                 size="lg"
                 className="bg-white text-stone-900 hover:bg-stone-100 rounded-full px-8 h-14 text-base font-semibold"
@@ -103,7 +103,7 @@ const Hero = () => {
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Link>
-            <Link href="/size-guide">
+            <Link href="/">
               <Button
                 size="lg"
                 variant="outline"
