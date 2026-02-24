@@ -5,8 +5,8 @@ import { supabase } from '@/lib/supabaseClient'
 import Link from 'next/link'
 import { FcGoogle } from 'react-icons/fc'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
-import { useCartStore } from '@/store/cartStore' // <-- importa el store
+import { useCartStore } from '@/store/cartStore'
+import { motion, Variants } from 'framer-motion'
 
 export default function SigninPage() {
   const [email, setEmail] = useState('')
@@ -24,12 +24,10 @@ export default function SigninPage() {
     if (error) {
       setError(error.message)
     } else {
-      // 🔹 Sync carrito local només un cop abans de redirigir
       await syncCartWithSupabase()
       router.push('/')
     }
   }
-
 
   const handleGoogleSignin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -37,96 +35,115 @@ export default function SigninPage() {
       options: { redirectTo: 'https://moa-web-v1.vercel.app/auth/callback' } //'http://localhost:3000/auth/callback' 'https://moa-web-v1.vercel.app/auth/callback'
     })
     if (error) setError(error.message)
-    else router.push('/') // redirigeix a home
+    else router.push('/')
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && email && password) {
-      handleSignin()
+    if (e.key === 'Enter' && email && password) handleSignin()
+  }
+
+  // Animacions per al form i inputs
+  const container: Variants = {
+    hidden: {},
+    show: {
+      transition: { staggerChildren: 0.1 }
     }
   }
 
-  // temporal
-  useEffect(() => {
-    // Comprovem sessió immediatament (important després del redirect OAuth)
-    const checkSession = async () => {
-      router.push('/')
+  const item: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { 
+      opacity: 1, 
+      y: 0, 
+      transition: { type: 'spring' as const, stiffness: 120 } 
     }
-    checkSession()
-  })
-
+  }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      <div className="absolute inset-0">
-        <img
-          src="https://sopotey.com/blog/wp-content/uploads/2024/04/ropa-de-marca-original.jpg"
-          className="w-full h-full object-cover opacity-50 blur-md"
-        />
-        <div className="absolute inset-0 bg-white/40"></div>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-rose-50 via-white to-rose-100 pt-32 pb-20">
+      <motion.div 
+        className="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-3xl shadow-lg p-8"
+        initial="hidden"
+        animate="show"
+        variants={container}
+      >
+        <motion.h1 
+          className="text-3xl font-semibold text-gray-900 mb-6 text-center"
+          variants={item}
+        >
+          Inicia sesión
+        </motion.h1>
 
-      <div className="relative z-10 w-full max-w-md p-8 bg-white/80 backdrop-blur-md shadow-lg rounded-2xl">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">Inicia sesión</h1>
+        {error && (
+          <motion.p 
+            className="text-red-600 mb-3 text-center"
+            variants={item}
+          >
+            {error}
+          </motion.p>
+        )}
 
-        {error && <p className="text-red-600 mb-3 text-center">{error}</p>}
-
-        <input
+        <motion.input
           type="email"
-          placeholder="Correu electrònic"
+          placeholder="Correo electrónico"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="w-full p-2 mb-4 border border-gray-300 rounded placeholder-gray-500 text-black focus:outline-none focus:ring-2 focus:ring-rose-500"
+          className="w-full p-3 mb-4 border border-black/10 rounded-xl placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
+          variants={item}
         />
 
-        <input
+        <motion.input
           type="password"
-          placeholder="Contrasenya"
+          placeholder="Contraseña"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="w-full p-2 mb-4 border border-gray-300 rounded placeholder-gray-500 text-black focus:outline-none focus:ring-2 focus:ring-rose-500"
+          className="w-full p-3 mb-4 border border-black/10 rounded-xl placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
+          variants={item}
         />
 
-        <p className="text-right mb-4">
-          <a
-            href="/signin/forgot-password"
-            className="text-sm text-rose-600 hover:underline"
-          >
+        <motion.p className="text-right mb-4" variants={item}>
+          <Link href="/signin/forgot-password" className="text-sm text-rose-600 hover:underline">
             ¿Olvidaste tu contraseña?
-          </a>
-        </p>
+          </Link>
+        </motion.p>
 
-        <button
+        <motion.button
           onClick={handleSignin}
           disabled={loading}
-          className="w-full bg-rose-600 text-white p-2 rounded hover:bg-rose-700 transition font-medium"
+          className={`w-full py-3 rounded-2xl font-semibold flex items-center justify-center gap-2 transition ${
+            loading
+              ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+              : 'bg-gradient-to-r from-rose-600 to-pink-500 text-white hover:opacity-90'
+          }`}
+          variants={item}
         >
-          {loading ? 'Iniciant sessió...' : 'Entrar'}
-        </button>
+          {loading ? 'Procesando...' : 'Entrar'}
+        </motion.button>
 
-        <div className="flex items-center my-6">
-          <div className="flex-grow border-t border-gray-300"></div>
+        <motion.div className="flex items-center my-6" variants={item}>
+          <div className="flex-grow border-t border-black/10"></div>
           <span className="mx-2 text-gray-500 text-sm">o continua con</span>
-          <div className="flex-grow border-t border-gray-300"></div>
-        </div>
+          <div className="flex-grow border-t border-black/10"></div>
+        </motion.div>
 
-        <button
+        <motion.button
           onClick={handleGoogleSignin}
-          className="w-full flex items-center justify-center gap-2 border border-gray-300 placeholder-gray-500 text-black bg-white hover:bg-gray-300 p-2 rounded transition font-medium"
+          className="w-full flex items-center justify-center gap-2 border border-black/10 bg-white hover:bg-gray-100 p-3 rounded-2xl transition font-medium text-gray-900"
+          variants={item}
         >
           <FcGoogle size={22} />
           <span>Inicia sesión con Google</span>
-        </button>
+        </motion.button>
 
-        <p className="mt-6 text-center text-gray-700">
-          ¿No tienes cuenta ahun?{' '}
+        <motion.p className="mt-6 text-center text-gray-700" variants={item}>
+          ¿No tienes cuenta aún?{' '}
           <Link href="/signup" className="text-rose-600 hover:underline font-medium">
-            Registrate
+            Regístrate
           </Link>
-        </p>
-      </div>
+        </motion.p>
+      </motion.div>
     </div>
   )
 }

@@ -1,52 +1,40 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
-import { useRouter } from "next/navigation";
+import { useState } from "react"
+import { supabase } from "@/lib/supabaseClient"
+import { useRouter } from "next/navigation"
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const [email, setEmail] = useState("")
+  const [message, setMessage] = useState("")
+  const [loading, setLoading] = useState(false)
+  const router = useRouter()
 
   const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+    e.preventDefault()
     if (!email) {
-      setMessage("Introduce tu correo electrónico.");
-      return;
+      setMessage("Introduce tu correo electrónico.")
+      return
     }
 
-    setLoading(true);
+    setLoading(true)
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/signin/update-password`,
-    });
-    setLoading(false);
+    })
+    setLoading(false)
 
     if (error) {
-      setMessage("❌ " + error.message);
+      setMessage("❌ " + error.message)
     } else {
-      setMessage("✅ Revisa tu correo para restablecer la contraseña.");
-      // 👇 Espera un moment i redirigeix a la home
-      setTimeout(() => router.push("/"), 2000);
+      setMessage("✅ Revisa tu correo para restablecer la contraseña.")
+      setTimeout(() => router.push("/"), 2000)
     }
-  };
+  }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Fons */}
-      <div className="absolute inset-0">
-        <img
-          src="https://sopotey.com/blog/wp-content/uploads/2024/04/ropa-de-marca-original.jpg"
-          className="w-full h-full object-cover opacity-50 blur-md"
-        />
-        <div className="absolute inset-0 bg-white/40"></div>
-      </div>
-
-      {/* Formulari */}
-      <div className="relative z-10 w-full max-w-md p-8 bg-white/80 backdrop-blur-md shadow-lg rounded-2xl">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-rose-50 via-white to-rose-100 pt-32 pb-20">
+      <div className="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-3xl shadow-lg p-8">
+        <h1 className="text-3xl font-semibold text-gray-900 mb-6 text-center">
           ¿Has olvidado la contraseña?
         </h1>
 
@@ -64,20 +52,24 @@ export default function ForgotPasswordPage() {
           </p>
         )}
 
-        <form onSubmit={handleForgotPassword}>
+        <form onSubmit={handleForgotPassword} className="space-y-4">
           <input
             type="email"
             placeholder="Correo electrónico"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-2 mb-4 border border-gray-300 rounded placeholder-gray-500 text-black focus:outline-none focus:ring-2 focus:ring-rose-500"
+            className="w-full p-3 border border-black/10 rounded-xl placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
             required
           />
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-rose-600 text-white p-2 rounded hover:bg-rose-700 transition font-medium"
+            className={`w-full py-3 rounded-2xl font-semibold flex items-center justify-center gap-2 transition ${
+              loading
+                ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                : 'bg-gradient-to-r from-rose-600 to-pink-500 text-white hover:opacity-90'
+            }`}
           >
             {loading ? "Enviando..." : "Enviar correo de restablecimiento"}
           </button>
@@ -91,5 +83,5 @@ export default function ForgotPasswordPage() {
         </p>
       </div>
     </div>
-  );
+  )
 }

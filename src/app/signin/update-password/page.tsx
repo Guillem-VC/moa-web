@@ -1,76 +1,106 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabaseClient'
 
 export default function UpdatePasswordPage() {
-  const router = useRouter();
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
-  const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [ready, setReady] = useState(false);
+  const router = useRouter()
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [message, setMessage] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     const checkRecovery = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      // Comprovem si hi ha sessió (temporal de recovery o normal)
+      const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
-        setMessage('No hay sesión activa. Vuelve a pedir reset de contraseña.');
+        setMessage('No hay sesión activa. Vuelve a pedir reset de contraseña.')
       }
-
-      setReady(true);
-    };
-    checkRecovery();
-  }, []);
+      setReady(true)
+    }
+    checkRecovery()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     if (password !== confirm) {
-      setMessage('Las contraseñas no coinciden.');
-      return;
+      setMessage('Las contraseñas no coinciden.')
+      return
     }
 
-    setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    setLoading(false);
+    setLoading(true)
+    const { error } = await supabase.auth.updateUser({ password })
+    setLoading(false)
 
     if (error) {
-      setMessage(error.message || 'Error actualizando contraseña');
+      setMessage(error.message || 'Error actualizando contraseña')
     } else {
-      setMessage('✅ Contraseña actualitzada correctamente!');
-
-      // Logout per eliminar sessió temporal
-      await supabase.auth.signOut();
-      setTimeout(() => router.push('/signin'), 2000);
+      setMessage('✅ Contraseña actualizada correctamente!')
+      await supabase.auth.signOut()
+      setTimeout(() => router.push('/signin'), 2000)
     }
-  };
+  }
 
-  if (!ready) return null;
+  if (!ready) return null
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      <div className="absolute inset-0">
-        <img src="https://sopotey.com/blog/wp-content/uploads/2024/04/ropa-de-marca-original.jpg"
-             className="w-full h-full object-cover opacity-50 blur-md" />
-        <div className="absolute inset-0 bg-white/40"></div>
-      </div>
-      <div className="relative z-10 w-full max-w-md p-8 bg-white/80 backdrop-blur-md shadow-lg rounded-2xl">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">Restablece tu contraseña</h1>
-        {message && <p className={`mb-4 text-center ${message.includes('correctament') ? 'text-green-600' : 'text-red-600'}`}>{message}</p>}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-rose-50 via-white to-rose-100 pt-32 pb-20">
+      <div className="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-3xl shadow-lg p-8">
+        <h1 className="text-3xl font-semibold text-gray-900 mb-6 text-center">
+          Restablece tu contraseña
+        </h1>
 
-        <form onSubmit={handleSubmit}>
-          <input type="password" placeholder="Nueva contraseña" value={password} onChange={(e) => setPassword(e.target.value)}
-                 className="w-full p-2 mb-4 border border-gray-300 rounded placeholder-gray-500 text-black focus:outline-none focus:ring-2 focus:ring-rose-500" required />
-          <input type="password" placeholder="Repite la contraseña" value={confirm} onChange={(e) => setConfirm(e.target.value)}
-                 className="w-full p-2 mb-4 border border-gray-300 rounded placeholder-gray-500 text-black focus:outline-none focus:ring-2 focus:ring-rose-500" required />
-          <button type="submit" disabled={loading}
-                  className="w-full bg-rose-600 text-white p-2 rounded hover:bg-rose-700 transition font-medium">
+        {message && (
+          <p
+            className={`mb-4 text-center ${
+              message.startsWith('✅') ? 'text-green-600' : 'text-red-600'
+            }`}
+          >
+            {message}
+          </p>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="password"
+            placeholder="Nueva contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full p-3 border border-black/10 rounded-xl placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
+            required
+          />
+
+          <input
+            type="password"
+            placeholder="Repite la contraseña"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            className="w-full p-3 border border-black/10 rounded-xl placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
+            required
+          />
+
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full py-3 rounded-2xl font-semibold flex items-center justify-center gap-2 transition ${
+              loading
+                ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                : 'bg-gradient-to-r from-rose-600 to-pink-500 text-white hover:opacity-90'
+            }`}
+          >
             {loading ? 'Actualizando...' : 'Cambiar contraseña'}
           </button>
         </form>
+
+        <p className="mt-6 text-center text-gray-700 text-sm">
+          Vuelve a{' '}
+          <a href="/signin" className="text-rose-600 hover:underline font-medium">
+            Inicia sesión
+          </a>
+        </p>
       </div>
     </div>
-  );
+  )
 }

@@ -1,59 +1,114 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
+
+type HeroImage = {
+  url: string
+  alt?: string
+}
 
 export default function ShippingPage() {
+  const [images, setImages] = useState<HeroImage[]>([])
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const res = await fetch('/api/about-images')
+        const data = await res.json()
+        if (data.ok && Array.isArray(data.images)) {
+          setImages(data.images)
+        }
+      } catch (err) {
+        console.error('Error loading hero image:', err)
+      }
+    }
+    fetchImages()
+  }, [])
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-rose-100 text-gray-800">
-      <section className="max-w-5xl mx-auto px-6 py-20 text-center">
-        <h1 className="text-5xl font-bold text-rose-700 mb-8">
-          Envíos
-        </h1>
+    <div className="min-h-screen bg-white">
 
-        <p className="text-lg text-gray-700 leading-relaxed max-w-3xl mx-auto mb-10">
-          Los pedidos se preparan y envían en un plazo de 24–72 horas laborables desde la confirmación de compra 
-          (salvo periodos especiales o lanzamientos). Una vez enviado, el tiempo de entrega dependerá de la empresa logística seleccionada.
-        </p>
+      {/* HERO */}
+      <section className="relative h-[50vh] flex items-center justify-center text-center">
+        {images[0] && (
+          <motion.img
+            src={images[0].url}
+            alt={images[0].alt || 'Hero image'}
+            className="absolute inset-0 w-full h-full object-cover"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.5 }}
+          />
+        )}
 
-        <p className="text-lg text-gray-700 leading-relaxed max-w-3xl mx-auto mb-10">
-          Ten en cuenta que pueden producirse retrasos ajenos a MOA debido a incidencias de transporte, 
-          periodos de alta demanda o circunstancias externas. En caso de cualquier problema, te ayudaremos a gestionarlo lo antes posible.
-        </p>
+        <div className="absolute inset-0 bg-black/40" />
 
-        <h1 className="text-5xl font-bold text-rose-700 mb-8">
-          Devoluciones
-        </h1>
+        <div className="relative z-10 max-w-3xl px-6 text-white">
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-5xl font-bold mb-4"
+          >
+            Envíos & Devoluciones
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-lg max-w-2xl mx-auto"
+          >
+            Información sobre envíos, devoluciones y garantías para tu tranquilidad.
+          </motion.p>
+        </div>
+      </section>
 
-        <p className="text-lg text-gray-700 leading-relaxed max-w-3xl mx-auto mb-6">
-          Para que la devolución sea aceptada:
-        </p>
+      {/* CONTENT */}
+      <section className="max-w-4xl mx-auto px-6 py-20 space-y-16">
 
-        <div className="max-w-3xl mx-auto mb-10 space-y-4 text-center">
-          <h2 className="text-2xl font-semibold text-gray-900">
-            1. La prenda debe estar sin usar.
-          </h2>
-          <h2 className="text-2xl font-semibold text-gray-900">
-            2. Debe conservar etiquetas y embalaje original.
-          </h2>
-          <h2 className="text-2xl font-semibold text-gray-900">
-            3. No debe presentar daños ni signos de uso.
-          </h2>
+        {/* Shipping Info */}
+        <div>
+          <h2 className="text-3xl font-bold text-stone-900 mb-6">Envíos</h2>
+          <p className="text-stone-700 mb-4">
+            Los pedidos se preparan y envían en un plazo de 24–72 horas laborables desde la confirmación de compra
+            (salvo periodos especiales o lanzamientos). Una vez enviado, el tiempo de entrega dependerá de la empresa logística seleccionada.
+          </p>
+          <p className="text-stone-700">
+            Ten en cuenta que pueden producirse retrasos ajenos a MOA debido a incidencias de transporte,
+            periodos de alta demanda o circunstancias externas. En caso de cualquier problema, te ayudaremos a gestionarlo lo antes posible.
+          </p>
         </div>
 
-        <p className="text-lg text-gray-700 leading-relaxed max-w-3xl mx-auto mb-10">
-          Una vez recibamos el producto y verifiquemos su estado, se realizará el reembolso mediante el mismo método de pago utilizado en la compra.
-        </p>
+        {/* Returns Info */}
+        <div>
+          <h2 className="text-3xl font-bold text-stone-900 mb-6">Devoluciones</h2>
+          <p className="text-stone-700 mb-6">
+            Para que la devolución sea aceptada:
+          </p>
+          <ul className="list-decimal list-inside space-y-2 text-stone-700 mb-6">
+            <li>La prenda debe estar sin usar.</li>
+            <li>Debe conservar etiquetas y embalaje original.</li>
+            <li>No debe presentar daños ni signos de uso.</li>
+          </ul>
+          <p className="text-stone-700 mb-6">
+            Una vez recibamos el producto y verifiquemos su estado, se realizará el reembolso mediante el mismo método de pago utilizado en la compra.
+          </p>
+          <p className="text-stone-700">
+            Para solicitar un cambio o devolución, puedes contactar con nosotros a través del correo de atención al cliente indicando tu número de pedido.
+          </p>
+        </div>
 
-        <p className="text-lg text-gray-700 leading-relaxed max-w-3xl mx-auto mb-10">
-          Para solicitar un cambio o devolución, puedes contactar con nosotros a través del correo de atención al cliente indicando tu número de pedido.
-        </p>
-        
-        <Link
-          href="/"
-          className="inline-block mt-8 bg-rose-600 text-white px-6 py-3 rounded-full text-lg font-semibold hover:bg-rose-700 transition"
-        >
-          Volver al inicio
-        </Link>
+        {/* Back Link */}
+        <div className="text-center">
+          <Link
+            href="/"
+            className="inline-block mt-6 bg-rose-600 text-white px-6 py-3 rounded-full text-lg font-semibold hover:bg-rose-700 transition"
+          >
+            Volver al inicio
+          </Link>
+        </div>
+
       </section>
     </div>
   )

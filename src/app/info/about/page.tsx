@@ -1,8 +1,14 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Heart, Shield, Sparkles, Users } from 'lucide-react'
 import Link from 'next/link'
+
+type AboutImage = {
+  url: string
+  alt?: string
+}
 
 const values = [
   {
@@ -32,22 +38,47 @@ const values = [
 ]
 
 export default function AboutPage() {
+  const [images, setImages] = useState<AboutImage[]>([])
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const res = await fetch('/api/about-images')
+        const data = await res.json()
+        if (data.ok && Array.isArray(data.images)) {
+          setImages(data.images)
+        } else {
+          console.error('Error loading images:', data.error)
+        }
+      } catch (err) {
+        console.error('Error fetching about images:', err)
+      }
+    }
+    fetchImages()
+  }, [])
+
   return (
     <div className="min-h-screen bg-white text-gray-800">
 
       {/* HERO */}
       <section className="relative h-[70vh] flex items-end">
-        <img
-          src="https://images.unsplash.com/photo-1599058917765-a780eda07a3e?w=1920"
-          alt="Mujer entrenando"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        {images[0] && (
+          <motion.img
+            src={images[0].url}
+            alt={images[0].alt || 'Hero image'}
+            className="absolute inset-0 w-full h-full object-cover"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.5 }}
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent" />
 
         <div className="relative max-w-6xl mx-auto px-6 pb-16 text-white">
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
             className="text-4xl md:text-6xl font-bold mb-6"
           >
             Diseñado para mujeres que no aceptan límites
@@ -55,7 +86,7 @@ export default function AboutPage() {
           <motion.p
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            transition={{ delay: 0.1, duration: 0.8 }}
             className="text-lg md:text-xl max-w-2xl text-white/85"
           >
             Mōa nace para resolver un problema real: ofrecer soporte técnico,
@@ -87,9 +118,7 @@ export default function AboutPage() {
       <section className="py-24">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Lo que nos define
-            </h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Lo que nos define</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
               Cada decisión de diseño está guiada por un compromiso real con la calidad,
               la funcionalidad y el respeto por el cuerpo femenino.
@@ -109,12 +138,8 @@ export default function AboutPage() {
                 <div className="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
                   <value.icon className="w-7 h-7 text-rose-600" />
                 </div>
-                <h3 className="font-semibold text-lg mb-3">
-                  {value.title}
-                </h3>
-                <p className="text-gray-600 text-sm leading-relaxed">
-                  {value.description}
-                </p>
+                <h3 className="font-semibold text-lg mb-3">{value.title}</h3>
+                <p className="text-gray-600 text-sm leading-relaxed">{value.description}</p>
               </motion.div>
             ))}
           </div>
@@ -124,44 +149,33 @@ export default function AboutPage() {
       {/* HISTORIA */}
       <section className="py-24 bg-gray-50">
         <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-          >
-            <img
-              src="https://images.unsplash.com/photo-1518611012118-696072aa579a?w=900"
-              alt="Entrenamiento femenino"
+          {images[0] && (
+            <motion.img
+              src={images[0].url}
+              alt={images[0].alt || 'Historia image'}
               className="rounded-2xl shadow-lg"
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1 }}
             />
-          </motion.div>
-
+          )}
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
           >
-            <span className="text-rose-600 font-semibold block mb-4">
-              El origen
-            </span>
-            <h2 className="text-3xl font-bold mb-6">
-              De la frustración a la innovación
-            </h2>
-
+            <span className="text-rose-600 font-semibold block mb-4">El origen</span>
+            <h2 className="text-3xl font-bold mb-6">De la frustración a la innovación</h2>
             <div className="space-y-4 text-gray-700 leading-relaxed">
               <p>
-                Mōa surge al observar cómo muchas mujeres evitaban ciertos
-                entrenamientos por falta de soporte adecuado. No era una cuestión
-                estética: era una limitación física real.
+                Mōa surge al observar cómo muchas mujeres evitaban ciertos entrenamientos por falta de soporte adecuado...
               </p>
               <p>
-                Investigamos materiales técnicos, probamos estructuras internas
-                de sujeción y escuchamos a mujeres con copas grandes que
-                necesitaban una solución definitiva.
+                Investigamos materiales técnicos, probamos estructuras internas de sujeción y escuchamos a mujeres con copas grandes que necesitaban una solución definitiva.
               </p>
               <p>
-                El resultado es una colección diseñada para acompañar cada
-                movimiento, sin compromisos.
+                El resultado es una colección diseñada para acompañar cada movimiento, sin compromisos.
               </p>
             </div>
           </motion.div>
@@ -170,9 +184,7 @@ export default function AboutPage() {
 
       {/* CTA FINAL */}
       <section className="py-20 text-center">
-        <h2 className="text-3xl font-bold mb-6">
-          Hold Strong. Move Free.
-        </h2>
+        <h2 className="text-3xl font-bold mb-6">Hold Strong. Move Free.</h2>
         <Link
           href="/"
           className="inline-block bg-rose-600 text-white px-8 py-4 rounded-full font-semibold hover:bg-rose-700 transition"
@@ -180,7 +192,6 @@ export default function AboutPage() {
           Descubrir la colección
         </Link>
       </section>
-
     </div>
   )
 }

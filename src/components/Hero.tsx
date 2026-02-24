@@ -6,7 +6,12 @@ import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
-const Hero = () => {
+type HeroProps = {
+  scrollToProductGrid: () => void
+}
+
+
+const Hero = ({ scrollToProductGrid }: HeroProps) => {
   const [images, setImages] = useState<string[]>([])
   const [currentImage, setCurrentImage] = useState(0)
   const [ready, setReady] = useState(false)
@@ -94,22 +99,21 @@ const Hero = () => {
           </p>
 
           <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-            <Link href="/">
-              <Button
-                size="lg"
-                className="bg-white text-stone-900 hover:bg-stone-100 rounded-full px-8 h-14 text-base font-semibold"
-              >
-                Shop Collection
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-            </Link>
-            <Link href="/">
+            <Button
+              size="lg"
+              className="bg-white text-stone-900 hover:bg-stone-100 rounded-full px-8 h-14 text-base font-semibold"
+              onClick={scrollToProductGrid} // ← crida el scroll
+            >
+              Nuestra colección
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+            <Link href="/info/fit-finder">
               <Button
                 size="lg"
                 variant="outline"
                 className="border-white/30 text-white hover:bg-white/10 rounded-full px-8 h-14 text-base font-semibold"
               >
-                Find Your Fit
+                Encuentra tu talla
               </Button>
             </Link>
           </div>

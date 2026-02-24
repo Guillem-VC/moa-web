@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'  
+import { useRouter } from 'next/navigation'
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState('')
@@ -12,12 +12,11 @@ export default function SignupPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter() 
+  const router = useRouter()
 
   const handleSignup = async () => {
     setError('')
 
-    // Validacions bàsiques
     if (!fullName || !email || !password) {
       setError('Se deben rellenar todos los campos')
       return
@@ -31,11 +30,7 @@ export default function SignupPage() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: {
-          full_name: fullName
-        }
-      }
+      options: { data: { full_name: fullName } }
     })
     setLoading(false)
 
@@ -43,7 +38,7 @@ export default function SignupPage() {
       setError(error.message)
       return
     }
-     // 🔹 CREAR PROFILE SI EL USUARIO EXISTE
+
     if (data?.user) {
       await fetch('/api/profiles', {
         method: 'POST',
@@ -55,70 +50,71 @@ export default function SignupPage() {
         })
       })
     }
+
     alert('Cuenta creada correctamente! Revisa tu email.')
     router.push('/')
     router.refresh()
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      <div className="absolute inset-0">
-        <img
-          src="https://sopotey.com/blog/wp-content/uploads/2024/04/ropa-de-marca-original.jpg"
-          className="w-full h-full object-cover opacity-50 blur-md"
-        />
-        <div className="absolute inset-0 bg-white/40"></div>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-rose-50 via-white to-rose-100 pt-32 pb-20">
+      <div className="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-3xl shadow-lg p-8">
+        <h1 className="text-3xl font-semibold text-gray-900 mb-6 text-center">
+          Crea tu cuenta
+        </h1>
 
-      <div className="relative z-10 w-full max-w-md p-8 bg-white/80 backdrop-blur-md shadow rounded">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">Crea un compte</h1>
+        {error && <p className="text-red-600 mb-4 text-center">{error}</p>}
 
-        {error && <p className="text-red-600 mb-3">{error}</p>}
+        <div className="space-y-4">
+          <input
+            type="text"
+            placeholder="Nombre completo"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            className="w-full p-3 border border-black/10 rounded-xl placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
+          />
 
-        <input
-          type="text"
-          placeholder="Nombre completo"
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          className="w-full p-2 mb-4 border border-gray-300 rounded placeholder-gray-500 text-black focus:outline-none focus:ring-2 focus:ring-rose-500"
-        />
+          <input
+            type="email"
+            placeholder="Correo electrónico"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full p-3 border border-black/10 rounded-xl placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
+          />
 
-        <input
-          type="email"
-          placeholder="Correo electrónico"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-2 mb-4 border border-gray-300 rounded placeholder-gray-500 text-black focus:outline-none focus:ring-2 focus:ring-rose-500"
-        />
+          <input
+            type="email"
+            placeholder="Confirma el correo electrónico"
+            value={confirmEmail}
+            onChange={(e) => setConfirmEmail(e.target.value)}
+            className="w-full p-3 border border-black/10 rounded-xl placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
+          />
 
-        <input
-          type="email"
-          placeholder="Confirma el correo electrònico"
-          value={confirmEmail}
-          onChange={(e) => setConfirmEmail(e.target.value)}
-          className="w-full p-2 mb-4 border border-gray-300 rounded placeholder-gray-500 text-black focus:outline-none focus:ring-2 focus:ring-rose-500"
-        />
-
-        <input
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-2 mb-4 border border-gray-300 rounded placeholder-gray-500 text-black focus:outline-none focus:ring-2 focus:ring-rose-500"
-        />
+          <input
+            type="password"
+            placeholder="Contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full p-3 border border-black/10 rounded-xl placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500 transition"
+          />
+        </div>
 
         <button
           onClick={handleSignup}
           disabled={loading}
-          className="w-full bg-rose-600 text-white p-2 rounded hover:bg-rose-700 transition"
+          className={`w-full py-3 rounded-2xl font-semibold mt-4 flex items-center justify-center transition ${
+            loading
+              ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+              : 'bg-gradient-to-r from-rose-600 to-pink-500 text-white hover:opacity-90'
+          }`}
         >
-          {loading ? 'Creando cuenta...' : 'Registrar-se'}
+          {loading ? 'Creando cuenta...' : 'Registrarse'}
         </button>
 
-        <p className="mt-4 text-center text-gray-700">
-          Ja tens compte?{' '}
-          <Link href="/signin" className="text-rose-600 hover:underline">
-            Inicia sessió
+        <p className="mt-6 text-center text-gray-700 text-sm">
+          ¿Ya tienes cuenta?{' '}
+          <Link href="/signin" className="text-rose-600 hover:underline font-medium">
+            Inicia sesión
           </Link>
         </p>
       </div>
