@@ -25,7 +25,7 @@
 
 /* === Body global === */
 body {
-  background: var(--background);
+  background: linear-gradient(to bottom, #f5f0e6 0%, #f5f0e6 50%, #000000 50%, #000000 100%);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }

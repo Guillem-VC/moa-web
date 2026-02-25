@@ -279,7 +279,7 @@ export default function Navbar() {
               : 'bg-white/95 shadow-sm'
           }`}
         >
-          <div className="relative flex items-center justify-center">
+          <div className="relative flex items-center justify-between md:justify-center">
 
             {/* LOGO (REAL CENTER) */}
             <Link
@@ -290,7 +290,7 @@ export default function Navbar() {
             </Link>
 
             {/* RIGHT SIDE ICONS */}
-            <div className="absolute right-8 flex items-center gap-8">
+            <div className="absolute right-4 md:right-8 flex items-center gap-4 md:gap-8">
 
               {/* SEARCH */}
               <button

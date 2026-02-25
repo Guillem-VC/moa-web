@@ -3,12 +3,12 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 // La teva IP (pots comprovar-la amb https://whatismyipaddress.com)
-const ALLOWED_IPS = ['91.126.216.249', '127.0.0.1', '::1'] // <-- posa aquí la teva IP pública
+const ALLOWED_IPS = ['91.126.216.249'] // <-- posa aquí la teva IP pública
 
 export function middleware(req: NextRequest) {
   // Vercel envia la IP real al header x-forwarded-for
-  const forwarded = req.headers.get('x-forwarded-for') || ''
-  const ip = forwarded ? forwarded.split(',')[0].trim() : '127.0.0.1'
+  const forwardedFor = req.headers.get("x-forwarded-for");
+  const ip = forwardedFor?.split(",")[0].trim() || "";
 
   if (!ALLOWED_IPS.includes(ip)) {
     const url = req.nextUrl.clone()
