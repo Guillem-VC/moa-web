@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 // La teva IP
-const ALLOWED_IPS = ['91.126.216.249']
+const ALLOWED_IPS = ['91.126.216.249','2.140.233.169']
 
 export function middleware(req: NextRequest) {
   const forwardedFor = req.headers.get("x-forwarded-for")
