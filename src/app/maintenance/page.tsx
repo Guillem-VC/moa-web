@@ -54,8 +54,7 @@ export default function Maintenance() {
           className="space-y-4"
         >
           <p className="text-stone-700 text-lg">
-            Si necesitas algo urgente, puedes escribirnos a nuestro correo habitual <strong>support@moa.com</strong>
-            o volver más tarde para descubrir las novedades.
+            Si necesitas algo urgente, puedes escribirnos a nuestro correo habitual <strong>support@moa.com</strong> o volver más tarde para descubrir las novedades.
           </p>
         </motion.div>
 
