@@ -33,7 +33,6 @@ export default function Maintenance() {
 
       {/* HERO */}
       <section className="relative h-[60vh] flex items-center justify-center text-center overflow-hidden">
-
         {/* Hero image */}
         {heroImage && (
           <motion.img
@@ -73,7 +72,6 @@ export default function Maintenance() {
 
       {/* CONTENT */}
       <section className="max-w-3xl mx-auto px-6 py-20 text-center space-y-8">
-
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -81,7 +79,7 @@ export default function Maintenance() {
           className="space-y-4"
         >
           <p className="text-stone-700 text-lg">
-            Si necesitas algo urgente, puedes escribirnos a nuestro correo habitual
+            Si necesitas algo urgente, puedes escribirnos a nuestro correo habitual <strong>support@moa.com</strong>
             o volver más tarde para descubrir las novedades.
           </p>
         </motion.div>
@@ -92,7 +90,6 @@ export default function Maintenance() {
           transition={{ delay: 0.6 }}
         >
         </motion.div>
-
       </section>
     </div>
   )
