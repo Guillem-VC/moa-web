@@ -2,18 +2,51 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { useState, useEffect } from 'react'
+
+type HeroImage = {
+  url: string
+  alt?: string
+}
 
 export default function Maintenance() {
+  const [heroImage, setHeroImage] = useState<HeroImage | null>(null)
+
+  useEffect(() => {
+    const fetchHeroImage = async () => {
+      try {
+        const res = await fetch('/api/about-images')
+        const data = await res.json()
+        if (data.ok && Array.isArray(data.images) && data.images.length > 0) {
+          setHeroImage(data.images[0])
+        }
+      } catch (err) {
+        console.error('Error loading hero image:', err)
+      }
+    }
+
+    fetchHeroImage()
+  }, [])
+
   return (
     <div className="min-h-screen bg-white">
 
       {/* HERO */}
       <section className="relative h-[60vh] flex items-center justify-center text-center overflow-hidden">
-        
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-stone-900 via-stone-800 to-black" />
 
-        {/* Soft pattern overlay */}
+        {/* Hero image */}
+        {heroImage && (
+          <motion.img
+            src={heroImage.url}
+            alt={heroImage.alt || 'Hero image'}
+            className="absolute inset-0 w-full h-full object-cover"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.5 }}
+          />
+        )}
+
+        {/* Soft overlay */}
         <div className="absolute inset-0 bg-black/40" />
 
         <div className="relative z-10 max-w-3xl px-6 text-white">
@@ -58,12 +91,6 @@ export default function Maintenance() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
         >
-          <Link
-            href="/"
-            className="inline-block bg-rose-600 text-white px-8 py-3 rounded-full text-lg font-semibold hover:bg-rose-700 transition duration-300"
-          >
-            Volver al inicio
-          </Link>
         </motion.div>
 
       </section>
