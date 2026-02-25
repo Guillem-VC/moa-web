@@ -2,8 +2,8 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// La teva IP
-const ALLOWED_IPS = ['91.126.216.249','2.140.233.169']
+// Llegim les IPs autoritzades de l'entorn (.env.local)
+const ALLOWED_IPS = process.env.ALLOWED_IPS?.split(',') || []
 
 export function middleware(req: NextRequest) {
   const forwardedFor = req.headers.get("x-forwarded-for")
@@ -18,9 +18,9 @@ export function middleware(req: NextRequest) {
   return NextResponse.next()
 }
 
+// Excloem rutes estàtiques i la imatge corporativa
 export const config = {
   matcher: [
-    // Middleware a totes les rutes menys les estàtiques de Next i la imatge corporativa
     '/((?!_next/static|_next/image|favicon.ico|foto_corporativa.jpg).*)',
   ],
 }
