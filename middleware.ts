@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// La teva IP (pots comprovar-la amb https://whatismyipaddress.com)
+// La teva IP
 const ALLOWED_IPS = ['91.126.216.249']
 
 export function middleware(req: NextRequest) {
@@ -18,9 +18,9 @@ export function middleware(req: NextRequest) {
   return NextResponse.next()
 }
 
-// Aplica a totes les rutes **excepte** _next/static, _next/image, favicon.ico i imatges comunes
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(png|jpg|jpeg|gif|svg|webp|ico)).*)'
+    // Middleware a totes les rutes menys les estàtiques de Next i la imatge corporativa
+    '/((?!_next/static|_next/image|favicon.ico|foto_corporativa.jpg).*)',
   ],
 }
