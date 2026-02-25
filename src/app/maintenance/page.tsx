@@ -2,48 +2,23 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { useState, useEffect } from 'react'
-
-type HeroImage = {
-  url: string
-  alt?: string
-}
 
 export default function Maintenance() {
-  const [heroImage, setHeroImage] = useState<HeroImage | null>(null)
-
-  useEffect(() => {
-    const fetchHeroImage = async () => {
-      try {
-        const res = await fetch('/api/about-images')
-        const data = await res.json()
-        if (data.ok && Array.isArray(data.images) && data.images.length > 0) {
-          setHeroImage(data.images[0])
-        }
-      } catch (err) {
-        console.error('Error loading hero image:', err)
-      }
-    }
-
-    fetchHeroImage()
-  }, [])
-
   return (
     <div className="min-h-screen bg-white">
 
       {/* HERO */}
       <section className="relative h-[60vh] flex items-center justify-center text-center overflow-hidden">
-        {/* Hero image */}
-        {heroImage && (
-          <motion.img
-            src={heroImage.url}
-            alt={heroImage.alt || 'Hero image'}
-            className="absolute inset-0 w-full h-full object-cover"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1.5 }}
-          />
-        )}
+
+        {/* Hero image local */}
+        <motion.img
+          src="/foto_corporativa.jpg"
+          alt="Foto Corporativa"
+          className="absolute inset-0 w-full h-full object-cover"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.5 }}
+        />
 
         {/* Soft overlay */}
         <div className="absolute inset-0 bg-black/40" />
