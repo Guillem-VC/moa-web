@@ -6,6 +6,12 @@ import type { NextRequest } from 'next/server'
 const ALLOWED_IPS = process.env.ALLOWED_IPS?.split(',') || []
 
 export function middleware(req: NextRequest) {
+  const pathname = req.nextUrl.pathname
+
+  // Excloem el webhook de Stripe
+  if (pathname.startsWith('/api/webhooks')) {
+    return NextResponse.next()
+  }
   const forwardedFor = req.headers.get("x-forwarded-for")
   const ip = forwardedFor?.split(",")[0].trim() || ""
 
