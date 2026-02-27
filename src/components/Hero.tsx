@@ -87,15 +87,15 @@ const Hero = ({ scrollToProductGrid }: HeroProps) => {
           className="max-w-xl text-center md:text-left"
         >
           <span className="inline-block px-4 py-1.5 bg-white/10 backdrop-blur-sm rounded-full text-white/90 text-sm font-medium mb-6">
-            Designed for D+ Cup Sizes
+            Diseñado para tallas de copa D+
           </span>
 
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6">
-            Move Without <span className="block text-rose-400">Limits</span>
+            Move Without <span className="block text-rose-400 ">Limits</span>
           </h1>
 
           <p className="text-lg text-white/80 mb-8 leading-relaxed">
-            Premium sport tops engineered for women with fuller busts. Maximum support, minimal bounce, and ultimate comfort—no matter how intense your workout.
+            Tops deportivos premium diseñados para mujeres con pecho más voluminoso. Máximo soporte, mínima oscilación y comodidad absoluta, sin importar la intensidad de tu entrenamiento.
           </p>
 
           <div className="flex flex-wrap gap-4 justify-center md:justify-start">

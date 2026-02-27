@@ -75,7 +75,7 @@ const Footer = () => {
               <li><a href="/info/fit-finder" className="hover:text-white transition-colors">Guía de tallas</a></li>
               <li><a href="/info/shippings-returns" className="hover:text-white transition-colors">Envíos y devoluciones</a></li>
               <li><a href="/info/contact" className="hover:text-white transition-colors">Contacto</a></li>
-              <li><a href="/" className="hover:text-white transition-colors">FAQ</a></li>
+              <li><a href="/info/faq" className="hover:text-white transition-colors">FAQ</a></li>
             </ul>
           </div>
 
@@ -85,8 +85,8 @@ const Footer = () => {
             <ul className="space-y-2 text-sm text-gray-300">
               <li><a href="/info/about" className="hover:text-white transition-colors">Sobre nosotros</a></li>
               <li><a href="/info/sustainability" className="hover:text-white transition-colors">Sostenibilidad</a></li>
-              <li><a href="/info/legal-advise" className="hover:text-white transition-colors">Política de Privacidad</a></li>
-              <li><a href="/" className="hover:text-white transition-colors">Términos del servicio</a></li>
+              <li><a href="/info/legal-policy" className="hover:text-white transition-colors">Política de Privacidad</a></li>
+              <li><a href="/info/terms-of-service" className="hover:text-white transition-colors">Términos del servicio</a></li>
             </ul>
           </div>
         </div>
